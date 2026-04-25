@@ -27,3 +27,6 @@ jobs:
 
       - name: Validate VPS menu shell script
         run: bash -n ./ssh-key-menu.sh
+
+      - name: Validate VPS bootstrap shell script
+        run: bash -n ./bootstrap-vps.sh

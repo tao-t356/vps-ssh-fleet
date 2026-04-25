@@ -59,6 +59,29 @@ chmod +x ~/ssh-key-menu.sh
 
 ---
 
+## VPS 直接一键拉取运行
+
+如果你已经登录进 VPS，想让 VPS **自己从 GitHub 拉脚本并立刻运行**，直接执行：
+
+```bash
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash -s -- --jshook 123
+```
+
+它会：
+
+1. 从 GitHub 拉取最新 `ssh-key-menu.sh`
+2. 保存到 `~/ssh-key-menu.sh`
+3. 自动加执行权限
+4. 立即打开交互菜单
+
+如果你只想下载，不想立刻运行：
+
+```bash
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash -s -- --jshook 123 --no-run
+```
+
+---
+
 ## 极简模式（Windows / 一路回车）
 
 ### 0) 先准备一份主机清单
