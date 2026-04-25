@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-REPO_RAW_URL="${REPO_RAW_URL:-https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main}"
+REPO_RAW_URL="${REPO_RAW_URL:-https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main}"
 TARGET_PATH="${TARGET_PATH:-${HOME}/ssh-key-menu.sh}"
 RUN_AFTER_INSTALL=1
 JSHOOK_VALUE="${JSHOOK:-}"

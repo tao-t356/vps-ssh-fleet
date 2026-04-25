@@ -64,7 +64,7 @@ chmod +x ~/ssh-key-menu.sh
 如果你已经登录进 VPS，想让 VPS **自己从 GitHub 拉脚本并立刻运行**，直接执行：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash -s -- --jshook 123
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook 123
 ```
 
 它会：
@@ -77,7 +77,7 @@ curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-f
 如果你只想下载，不想立刻运行：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash -s -- --jshook 123 --no-run
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook 123 --no-run
 ```
 
 ---
