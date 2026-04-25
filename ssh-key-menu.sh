@@ -30,8 +30,17 @@ say() { printf '%s\n' "$*"; }
 ok() { printf '%s%s%s\n' "${C_GREEN}" "$*" "${C_RESET}"; }
 warn() { printf '%s%s%s\n' "${C_YELLOW}" "$*" "${C_RESET}"; }
 err() { printf '%s%s%s\n' "${C_RED}" "$*" "${C_RESET}" >&2; }
-pause() { printf '\n'; read -r -p "按回车继续..." _; }
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+prompt_read() {
+  if [ -r /dev/tty ]; then
+    read -r "$@" < /dev/tty
+  else
+    read -r "$@"
+  fi
+}
+
+pause() { printf '\n'; prompt_read -p "按回车继续..." _; }
 
 require_cmd() {
   if ! have_cmd "$1"; then
@@ -181,18 +190,18 @@ option_generate_keypair() {
   local key_path=""
   local comment=""
 
-  read -r -p "密钥保存路径 [${default_path}]: " key_path
+  prompt_read -p "密钥保存路径 [${default_path}]: " key_path
   key_path="${key_path:-${default_path}}"
 
   if [ -e "${key_path}" ] || [ -e "${key_path}.pub" ]; then
-    read -r -p "文件已存在，是否覆盖？[y/N]: " confirm
+    prompt_read -p "文件已存在，是否覆盖？[y/N]: " confirm
     case "${confirm}" in
       y|Y) ;;
       *) warn "已取消。"; return 0 ;;
     esac
   fi
 
-  read -r -p "注释 [${CURRENT_USER}@$(hostname)]: " comment
+  prompt_read -p "注释 [${CURRENT_USER}@$(hostname)]: " comment
   comment="${comment:-${CURRENT_USER}@$(hostname)}"
 
   ssh-keygen -t ed25519 -f "${key_path}" -C "${comment}"
@@ -202,7 +211,7 @@ option_generate_keypair() {
 
 option_manual_key() {
   local key_line=""
-  read -r -p "请粘贴一整行 SSH 公钥: " key_line
+  prompt_read -p "请粘贴一整行 SSH 公钥: " key_line
 
   if [ -z "${key_line}" ]; then
     warn "没有输入内容。"
@@ -224,13 +233,13 @@ option_import_github() {
   local url=""
   local body=""
 
-  read -r -p "GitHub 用户名: " gh_user
+  prompt_read -p "GitHub 用户名: " gh_user
   if [ -z "${gh_user}" ]; then
     warn "GitHub 用户名不能为空。"
     return 0
   fi
 
-  read -r -p "jshook（当前环境建议填写）: " jshook
+  prompt_read -p "jshook（当前环境建议填写）: " jshook
   url="https://github.com/${gh_user}.keys"
   body="$(fetch_url_text "${url}" "${jshook}")" || return 1
 
@@ -248,13 +257,13 @@ option_import_url() {
   local jshook=""
   local body=""
 
-  read -r -p "公钥 URL: " url
+  prompt_read -p "公钥 URL: " url
   if [ -z "${url}" ]; then
     warn "URL 不能为空。"
     return 0
   fi
 
-  read -r -p "jshook（如果需要）: " jshook
+  prompt_read -p "jshook（如果需要）: " jshook
   body="$(fetch_url_text "${url}" "${jshook}")" || return 1
 
   if [ -z "${body}" ]; then
@@ -384,7 +393,7 @@ EOF
 
 option_disable_password_login() {
   say "请先确保你已经在新终端里测试过公钥登录。"
-  read -r -p "确认关闭密码登录？[y/N]: " confirm
+  prompt_read -p "确认关闭密码登录？[y/N]: " confirm
   case "${confirm}" in
     y|Y)
       apply_password_mode "no" "no" "no" "prohibit-password"
@@ -397,7 +406,7 @@ option_disable_password_login() {
 }
 
 option_enable_password_login() {
-  read -r -p "确认开启密码登录？[y/N]: " confirm
+  prompt_read -p "确认开启密码登录？[y/N]: " confirm
   case "${confirm}" in
     y|Y)
       apply_password_mode "yes" "yes" "yes" "yes"
@@ -413,7 +422,7 @@ main_loop() {
   local choice=""
   while true; do
     print_menu
-    read -r -p "请输入你的选择: " choice
+    prompt_read -p "请输入你的选择: " choice
     printf '\n'
     case "${choice}" in
       1) option_generate_keypair ;;
