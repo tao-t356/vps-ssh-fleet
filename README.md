@@ -130,7 +130,7 @@ curl -fsSL -H "jshook: <YOUR_JSHOOK>" https://raw.githubusercontent.com/tao-t356
 如果你当前环境里的 `jshook` 是 `123`，可直接用：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook 123
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash
 ```
 
 这一步会自动：
@@ -349,7 +349,7 @@ chmod +x ~/ssh-key-menu.sh
 如果你已经登录进 VPS，想让 VPS **自己从 GitHub 拉脚本并立刻运行**，直接执行：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook 123
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash
 ```
 
 它会：
@@ -371,13 +371,13 @@ f
 如果你只想下载，不想立刻运行：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook 123 --no-run
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash -s -- --no-run
 ```
 
 如果你想换成别的快捷命令，比如 `menu`：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook 123 --shortcut menu
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash -s -- --shortcut menu
 ```
 
 ---
