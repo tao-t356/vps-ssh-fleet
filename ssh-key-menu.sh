@@ -40,6 +40,14 @@ prompt_read() {
   fi
 }
 
+run_with_tty() {
+  if [ -r /dev/tty ] && [ -w /dev/tty ]; then
+    "$@" < /dev/tty > /dev/tty 2>&1
+  else
+    "$@"
+  fi
+}
+
 pause() { printf '\n'; prompt_read -p "按回车继续..." _; }
 
 require_cmd() {
@@ -204,7 +212,7 @@ option_generate_keypair() {
   prompt_read -p "注释 [${CURRENT_USER}@$(hostname)]: " comment
   comment="${comment:-${CURRENT_USER}@$(hostname)}"
 
-  ssh-keygen -t ed25519 -f "${key_path}" -C "${comment}"
+  run_with_tty ssh-keygen -t ed25519 -f "${key_path}" -C "${comment}"
   ok "已生成密钥：${key_path}"
   [ -f "${key_path}.pub" ] && say "公钥内容：" && cat "${key_path}.pub"
 }
@@ -279,7 +287,7 @@ option_edit_authorized_keys() {
   ensure_ssh_dir
   local editor
   editor="$(default_editor)"
-  "${editor}" "${AUTHORIZED_KEYS}"
+  run_with_tty "${editor}" "${AUTHORIZED_KEYS}"
 }
 
 option_view_local_keys() {
