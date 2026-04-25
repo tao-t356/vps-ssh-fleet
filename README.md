@@ -16,6 +16,49 @@
 
 ---
 
+## VPS 内一键菜单模式（更接近你截图那种）
+
+如果你的习惯是：
+
+- 先手动登录进 VPS
+- 然后在 VPS 里面顺手改 SSH 登录方式
+- 希望有一个交互菜单，按数字选择
+
+那就用这个单文件脚本：
+
+`D:\vs\vps-ssh-fleet\ssh-key-menu.sh`
+
+### 用法
+
+先把脚本传到 VPS：
+
+```powershell
+scp D:\vs\vps-ssh-fleet\ssh-key-menu.sh root@你的VPSIP:/root/
+```
+
+然后登录 VPS 执行：
+
+```bash
+chmod +x ~/ssh-key-menu.sh
+./ssh-key-menu.sh
+```
+
+### 菜单功能
+
+- `1` 生成本机密钥对
+- `2` 手动输入一行公钥
+- `3` 从 `GitHub 用户名.keys` 导入公钥
+- `4` 从 URL 导入公钥
+- `5` 编辑 `~/.ssh/authorized_keys`
+- `6` 查看本机密钥
+- `7` 查看当前 `authorized_keys`
+- `8` 关闭密码登录
+- `9` 开启密码登录
+
+> 如果你在当前这个本地环境里用 GitHub / URL 导入，脚本会让你输入 `jshook`。
+
+---
+
 ## 极简模式（Windows / 一路回车）
 
 ### 0) 先准备一份主机清单

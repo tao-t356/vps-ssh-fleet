@@ -24,3 +24,6 @@ jobs:
 
       - name: Validate quick key-login helper
         run: python scripts/enable_github_key_login.py --help
+
+      - name: Validate VPS menu shell script
+        run: bash -n ./ssh-key-menu.sh
