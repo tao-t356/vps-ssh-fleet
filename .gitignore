@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+
+# Local outputs
+generated/
+
+# Real inventory / secrets
+inventory/hosts.yml
+.env
+.env.*
+
+# SSH materials
+*.pem
+*.ppk
+*.key
+id_*
+*.pub
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Ansible
+*.retry
+

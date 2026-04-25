@@ -1,0 +1,44 @@
+---
+- name: Bootstrap my public key to VPS fleet
+  hosts: all
+  gather_facts: false
+  vars:
+    target_ssh_user: "{{ managed_ssh_user | default(ansible_user) }}"
+    target_ssh_home: "{{ '/root' if target_ssh_user == 'root' else '/home/' ~ target_ssh_user }}"
+
+  tasks:
+    - name: Read local public key from controller
+      ansible.builtin.set_fact:
+        bootstrap_ssh_public_key: "{{ lookup('ansible.builtin.file', ssh_public_key_path) }}"
+      delegate_to: localhost
+      become: false
+
+    - name: Ensure managed SSH user exists when different from login user
+      ansible.builtin.user:
+        name: "{{ target_ssh_user }}"
+        shell: /bin/bash
+        create_home: true
+      become: true
+      when: target_ssh_user != ansible_user
+
+    - name: Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: "{{ target_ssh_home }}/.ssh"
+        state: directory
+        owner: "{{ target_ssh_user }}"
+        group: "{{ target_ssh_user }}"
+        mode: "0700"
+      become: true
+
+    - name: Install public key to authorized_keys
+      ansible.posix.authorized_key:
+        user: "{{ target_ssh_user }}"
+        state: present
+        key: "{{ bootstrap_ssh_public_key }}"
+        manage_dir: false
+      become: true
+
+    - name: Show success summary
+      ansible.builtin.debug:
+        msg: "Public key installed for {{ target_ssh_user }} on {{ inventory_hostname }}"
+

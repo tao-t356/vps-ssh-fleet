@@ -1,0 +1,32 @@
+---
+- name: Harden SSH after public key login is verified
+  hosts: all
+  gather_facts: true
+  vars:
+    ssh_service_name: "{{ 'ssh' if ansible_facts.os_family == 'Debian' else 'sshd' }}"
+
+  tasks:
+    - name: Ensure sshd_config includes managed hardening block
+      ansible.builtin.blockinfile:
+        path: /etc/ssh/sshd_config
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - vps-ssh-fleet"
+        block: |
+          PubkeyAuthentication yes
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          ChallengeResponseAuthentication no
+          PermitRootLogin prohibit-password
+      become: true
+      notify: Restart SSH service
+
+    - name: Show reminder
+      ansible.builtin.debug:
+        msg: "Verify that key login works on {{ inventory_hostname }} before ending your current session."
+
+  handlers:
+    - name: Restart SSH service
+      ansible.builtin.service:
+        name: "{{ ssh_service_name }}"
+        state: restarted
+      become: true
+

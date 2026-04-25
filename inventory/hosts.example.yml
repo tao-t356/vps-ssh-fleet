@@ -1,0 +1,26 @@
+all:
+  vars:
+    ansible_connection: ssh
+    ansible_python_interpreter: auto_silent
+    ssh_public_key_path: ~/.ssh/id_ed25519.pub
+    ssh_private_key_path: ~/.ssh/id_ed25519
+    managed_ssh_user: root
+  children:
+    vps:
+      hosts:
+        hk-1:
+          ansible_host: 203.0.113.10
+          ansible_user: root
+          ansible_port: 22
+          ssh_alias: hk-1
+        us-1:
+          ansible_host: 198.51.100.20
+          ansible_user: root
+          ansible_port: 22
+          ssh_alias: us-1
+        sg-1:
+          ansible_host: 192.0.2.30
+          ansible_user: root
+          ansible_port: 22
+          ssh_alias: sg-1
+
