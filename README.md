@@ -4,6 +4,291 @@
 
 > 适合：你有很多自己的 VPS，想把同一把公钥分发到所有机器，然后通过统一的 SSH 别名和配置来管理。
 
+## Windows + GitHub + VPS 完整流程（推荐先看）
+
+如果你和我刚才的对话场景一样：
+
+- 本机是 **Windows**
+- 公钥想统一放在 **GitHub 账号**
+- 登录到每台 VPS 后，用菜单脚本导入公钥
+
+那就按下面这套流程走。
+
+---
+
+### 第 1 步：在 Windows 生成 SSH 密钥对
+
+打开 **PowerShell**，执行：
+
+```powershell
+ssh-keygen -t ed25519 -C "你的GitHub用户名@windows"
+```
+
+常见提示：
+
+1. 看到保存路径：
+
+   ```text
+   Enter file in which to save the key (C:\Users\你的用户名\.ssh\id_ed25519):
+   ```
+
+   直接回车即可。
+
+2. 看到 passphrase：
+
+   ```text
+   Enter passphrase (empty for no passphrase):
+   ```
+
+   - 想省事：直接回车
+   - 想更安全：设置一个口令
+
+生成完成后，通常会得到两个文件：
+
+- 私钥：`C:\Users\你的Windows用户名\.ssh\id_ed25519`
+- 公钥：`C:\Users\你的Windows用户名\.ssh\id_ed25519.pub`
+
+可以用下面命令确认：
+
+```powershell
+Get-ChildItem $HOME\.ssh
+```
+
+---
+
+### 第 2 步：复制 Windows 公钥
+
+查看公钥：
+
+```powershell
+Get-Content $HOME\.ssh\id_ed25519.pub
+```
+
+复制到剪贴板：
+
+```powershell
+Get-Content $HOME\.ssh\id_ed25519.pub | Set-Clipboard
+```
+
+> 注意：
+>
+> - **`.pub` 是公钥**，可以上传到 GitHub、可以导入 VPS
+> - **没有后缀的 `id_ed25519` 是私钥**，绝对不要上传到 GitHub，也不要发给别人
+
+---
+
+### 第 3 步：把公钥上传到 GitHub 账号
+
+注意：这里是 **GitHub 账号设置**，**不是仓库设置**。
+
+直接打开：
+
+[https://github.com/settings/keys](https://github.com/settings/keys)
+
+或者手动点击：
+
+1. 右上角头像
+2. **Settings**
+3. 左侧 **Access**
+4. **SSH and GPG keys**
+5. **New SSH key** / **Add SSH key**
+
+填写建议：
+
+- **Title**：例如 `facker-windows`
+- **Key type**：`Authentication Key`
+- **Key**：粘贴刚才复制的 `id_ed25519.pub` 整整一行
+
+保存后，GitHub 会给你发一封提醒邮件，这是正常的。
+
+如果想确认 GitHub 上已经有这把公钥，可以执行：
+
+```powershell
+curl.exe -H "jshook: <YOUR_JSHOOK>" https://github.com/你的GitHub用户名.keys
+```
+
+如果你当前环境里的 `jshook` 就是 `123`，那就是：
+
+```powershell
+curl.exe -H "jshook: 123" https://github.com/你的GitHub用户名.keys
+```
+
+返回内容里如果能看到你的 `ssh-ed25519 ...` 那一行，就说明上传成功了。
+
+---
+
+### 第 4 步：登录 VPS，让 VPS 自己从 GitHub 拉脚本
+
+先正常用密码登录 VPS。
+
+登录后执行：
+
+```bash
+curl -fsSL -H "jshook: <YOUR_JSHOOK>" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook <YOUR_JSHOOK>
+```
+
+如果你当前环境里的 `jshook` 是 `123`，可直接用：
+
+```bash
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook 123
+```
+
+这一步会自动：
+
+1. 从 GitHub 拉取最新菜单脚本
+2. 保存到 `~/ssh-key-menu.sh`
+3. 自动加执行权限
+4. 默认安装快捷命令 `f`
+5. 立即打开菜单
+
+以后你在 VPS 里直接输入：
+
+```bash
+f
+```
+
+就可以再次打开菜单。
+
+---
+
+### 第 5 步：在 VPS 菜单里从 GitHub 导入公钥
+
+菜单打开后，输入：
+
+```text
+3
+```
+
+也就是：
+
+- `3. GitHub 导入已有公钥`
+
+然后依次输入：
+
+1. **GitHub 用户名**
+2. **jshook**
+
+脚本会把：
+
+```text
+https://github.com/你的GitHub用户名.keys
+```
+
+里的公钥导入到当前用户的：
+
+```text
+~/.ssh/authorized_keys
+```
+
+你可以在 VPS 上确认一下：
+
+```bash
+cat ~/.ssh/authorized_keys
+```
+
+---
+
+### 第 6 步：回到 Windows 测试密钥登录
+
+#### PowerShell 命令行测试
+
+如果你给 `root` 导入了公钥：
+
+```powershell
+ssh root@你的VPSIP
+```
+
+如果你是普通用户，就换成对应用户名。
+
+#### 如果你用的是图形 SSH 客户端（例如 Termius）
+
+要点只有一个：
+
+- **私钥文件** 要选：
+
+  ```text
+  C:\Users\你的Windows用户名\.ssh\id_ed25519
+  ```
+
+- **不要选 `.pub` 文件**
+
+如果你在生成密钥时设置了 passphrase，客户端要求输入的是：
+
+- **私钥口令**
+
+不是 VPS 的登录密码。
+
+---
+
+### 第 7 步：确认密钥登录成功后，再关闭密码登录
+
+这一步一定要最后做。
+
+先确认：
+
+- 新开一个终端 / 客户端
+- 用密钥能成功登录 VPS
+
+确认成功后，再回到 VPS 菜单，输入：
+
+```text
+8
+```
+
+也就是：
+
+- `8. 关闭密码登录`
+
+---
+
+### 最常见的几个坑
+
+#### 1）把仓库设置当成账号设置
+
+错误位置：
+
+- `https://github.com/你的用户名/某个仓库/settings`
+
+正确位置：
+
+- `https://github.com/settings/keys`
+
+#### 2）把私钥上传到 GitHub
+
+绝对不要上传：
+
+```text
+C:\Users\你的Windows用户名\.ssh\id_ed25519
+```
+
+上传到 GitHub 的只能是：
+
+```text
+C:\Users\你的Windows用户名\.ssh\id_ed25519.pub
+```
+
+#### 3）客户端里选错文件
+
+连接 VPS 时，客户端应该选：
+
+- 私钥：`id_ed25519`
+
+不是：
+
+- 公钥：`id_ed25519.pub`
+
+#### 4）还没测试成功就关闭密码登录
+
+一定先测试：
+
+- 密钥登录成功
+
+再去菜单里选：
+
+- `8. 关闭密码登录`
+
+---
+
 ## 现在最简单的用法
 
 如果你想要的是：
