@@ -1,2 +1,2 @@
 PyYAML>=6.0
-
+paramiko>=3.5

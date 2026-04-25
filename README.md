@@ -4,10 +4,102 @@
 
 > 适合：你有很多自己的 VPS，想把同一把公钥分发到所有机器，然后通过统一的 SSH 别名和配置来管理。
 
+## 现在最简单的用法
+
+如果你想要的是：
+
+- 公钥统一挂在 GitHub 账号上
+- 本地只运行一个脚本
+- 一路按几次回车，就把多台 VPS 开成密钥登录
+
+那就优先用下面这个 **极简模式**。
+
+---
+
+## 极简模式（Windows / 一路回车）
+
+### 0) 先准备一份主机清单
+
+第一次只要填这一个文件：
+
+`inventory/hosts.csv`
+
+如果还没有，就复制：
+
+```powershell
+Copy-Item .\inventory\hosts.csv.example .\inventory\hosts.csv
+```
+
+格式很简单：
+
+```csv
+alias,host,port,user,password
+hk-1,203.0.113.10,22,root,
+us-1,198.51.100.20,22,root,
+sg-1,192.0.2.30,22,root,
+```
+
+说明：
+
+- `alias`：你以后本地连接用的名字
+- `host`：VPS IP / 域名
+- `port`：默认 22
+- `user`：现在还能密码登录的用户，通常是 `root`
+- `password`：可以留空；脚本会统一问你一次密码
+
+---
+
+### 1) 确保你的公钥已经在 GitHub 上
+
+也就是这个地址能返回你的公钥：
+
+```text
+https://github.com/<你的用户名>.keys
+```
+
+> 注意：上传到 GitHub 的只能是**公钥**，私钥永远不要上传。
+
+---
+
+### 2) 运行一键脚本
+
+在项目根目录执行：
+
+```powershell
+.\quick-start.ps1
+```
+
+它会做这些事：
+
+1. 读取 `inventory/hosts.csv`
+2. 从 `github.com/<用户名>.keys` 拉取公钥
+3. 用密码 SSH 登录每台 VPS
+4. 把公钥写入 `~/.ssh/authorized_keys`
+5. 自动生成 `generated/ssh_config`
+6. 可选：验证成功后关闭密码登录
+
+默认就是**尽量少输入**：
+
+- GitHub 用户名
+- jshook（仅当前这个本地环境需要）
+- SSH 密码（可统一输入一次）
+- 是否关闭密码登录（默认否，更安全）
+
+---
+
+### 3) 完成后直接连接
+
+```powershell
+ssh -F .\generated\ssh_config hk-1
+```
+
+---
+
 ## 项目目标
 
 - 用你自己的 SSH 公钥登录全部 VPS
 - 不再依赖“别人帮你生成”的可疑密钥
+- 支持 GitHub `username.keys` 作为统一公钥来源
 - 用 Ansible 批量下发公钥
 - 自动生成本地 `ssh_config`
 - 可选执行 SSH 基础加固
@@ -27,23 +119,28 @@
 ```text
 vps-ssh-fleet/
 ├─ .gitignore
+├─ quick-start.ps1
 ├─ ansible.cfg
 ├─ requirements.txt
 ├─ README.md
 ├─ docs/
 │  └─ SECURITY.md
 ├─ inventory/
+│  ├─ hosts.csv.example
 │  └─ hosts.example.yml
 ├─ playbooks/
 │  ├─ bootstrap_public_key.yml
 │  └─ harden_ssh.yml
 └─ scripts/
+   ├─ enable_github_key_login.py
    └─ render_ssh_config.py
 ```
 
 ---
 
 ## 快速开始
+
+> 如果你是 Windows 用户，并且想要“少输命令、少折腾”，优先看上面的 **极简模式**。下面是更通用的高级模式。
 
 ### 1) 在你自己的电脑生成密钥
 
@@ -169,6 +266,7 @@ ansible-playbook -i inventory/hosts.yml playbooks/harden_ssh.yml
 
 - 生成 ssh config：直接用 Python 即可
 - 跑 Ansible：推荐用 **WSL / Linux 控制机**
+- 如果你只是想快速切到密钥登录：直接用 `quick-start.ps1`
 
 ---
 
@@ -191,4 +289,3 @@ ansible-playbook -i inventory/hosts.yml playbooks/harden_ssh.yml
 - 请把它视为**不可信**
 - 最好尽快替换成你自己生成的新密钥
 - 并清理所有 VPS 上的旧公钥记录
-

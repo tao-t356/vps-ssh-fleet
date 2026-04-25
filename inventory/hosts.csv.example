@@ -1,0 +1,4 @@
+alias,host,port,user,password
+hk-1,203.0.113.10,22,root,
+us-1,198.51.100.20,22,root,
+sg-1,192.0.2.30,22,root,

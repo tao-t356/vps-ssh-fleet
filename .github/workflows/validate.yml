@@ -21,3 +21,6 @@ jobs:
 
       - name: Render SSH config from example inventory
         run: python scripts/render_ssh_config.py --inventory inventory/hosts.example.yml --output generated/ssh_config
+
+      - name: Validate quick key-login helper
+        run: python scripts/enable_github_key_login.py --help
