@@ -72,12 +72,27 @@ curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-f
 1. 从 GitHub 拉取最新 `ssh-key-menu.sh`
 2. 保存到 `~/ssh-key-menu.sh`
 3. 自动加执行权限
-4. 立即打开交互菜单
+4. 默认安装一个快捷命令 `f`
+5. 立即打开交互菜单
+
+以后你在 VPS 里直接输入：
+
+```bash
+f
+```
+
+就能再次打开菜单。
 
 如果你只想下载，不想立刻运行：
 
 ```bash
 curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook 123 --no-run
+```
+
+如果你想换成别的快捷命令，比如 `menu`：
+
+```bash
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook 123 --shortcut menu
 ```
 
 ---
