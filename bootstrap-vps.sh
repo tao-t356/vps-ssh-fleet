@@ -117,7 +117,8 @@ write_menu_script() {
 set -euo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
-TOOLBOX_VERSION="0.7.0"
+SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
+TOOLBOX_VERSION="0.8.0"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
 SSH_DIR="${CURRENT_HOME}/.ssh"
@@ -146,6 +147,22 @@ ok() { printf '%s%s%s\n' "${C_GREEN}" "$*" "${C_RESET}"; }
 warn() { printf '%s%s%s\n' "${C_YELLOW}" "$*" "${C_RESET}"; }
 err() { printf '%s%s%s\n' "${C_RED}" "$*" "${C_RESET}" >&2; }
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+run_docker() {
+  if ! have_cmd docker; then
+    err "当前系统未安装 Docker。"
+    return 1
+  fi
+
+  if docker info >/dev/null 2>&1; then
+    docker "$@"
+  elif have_cmd sudo && sudo docker info >/dev/null 2>&1; then
+    sudo docker "$@"
+  else
+    err "当前用户无法访问 Docker，请切换到 root 或加入 docker 组。"
+    return 1
+  fi
+}
 
 prompt_read() {
   if [ -r /dev/tty ]; then
@@ -663,6 +680,271 @@ EOF
   option_bbr_info
 }
 
+option_system_cleanup() {
+  local root_cmd=""
+  local tmp_script=""
+
+  if ! root_cmd="$(sudo_prefix)"; then
+    err "需要 root 或 sudo 权限才能执行系统清理。"
+    return 1
+  fi
+
+  say "即将执行系统清理："
+  say "- apt / dnf / yum 缓存清理"
+  say "- 无用依赖清理"
+  say "- journal 日志保留最近 7 天"
+  prompt_read -p "确认继续？[y/N]: " confirm
+  case "${confirm}" in
+    y|Y) ;;
+    *)
+      warn "已取消。"
+      return 0
+      ;;
+  esac
+
+  say "清理前磁盘使用："
+  df -h /
+
+  tmp_script="$(mktemp)"
+  cat > "${tmp_script}" <<'EOF'
+set -e
+
+if command -v apt-get >/dev/null 2>&1; then
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -y >/dev/null 2>&1 || true
+  apt-get autoremove -y
+  apt-get autoclean -y
+  apt-get clean -y
+elif command -v dnf >/dev/null 2>&1; then
+  dnf autoremove -y || true
+  dnf clean all || true
+elif command -v yum >/dev/null 2>&1; then
+  yum autoremove -y || true
+  yum clean all || true
+fi
+
+if command -v journalctl >/dev/null 2>&1; then
+  journalctl --vacuum-time=7d || true
+fi
+EOF
+
+  if [ -n "${root_cmd}" ]; then
+    ${root_cmd} bash "${tmp_script}"
+  else
+    bash "${tmp_script}"
+  fi
+  rm -f "${tmp_script}"
+
+  say "清理后磁盘使用："
+  df -h /
+}
+
+option_docker_status() {
+  if ! have_cmd docker; then
+    warn "当前系统未安装 Docker。"
+    return 0
+  fi
+
+  say "${C_BOLD}${C_CYAN}Docker 状态${C_RESET}"
+  say "--------------------------------------------------"
+  docker --version 2>/dev/null || true
+  run_docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}' 2>/dev/null || true
+}
+
+option_docker_list_all() {
+  if ! have_cmd docker; then
+    warn "当前系统未安装 Docker。"
+    return 0
+  fi
+
+  run_docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}'
+}
+
+option_docker_start_all() {
+  local ids=""
+  ids="$(run_docker ps -aq 2>/dev/null || true)"
+  if [ -z "${ids}" ]; then
+    warn "当前没有容器。"
+    return 0
+  fi
+  run_docker start ${ids}
+}
+
+option_docker_stop_all() {
+  local ids=""
+  ids="$(run_docker ps -aq 2>/dev/null || true)"
+  if [ -z "${ids}" ]; then
+    warn "当前没有容器。"
+    return 0
+  fi
+  run_docker stop ${ids}
+}
+
+option_docker_restart_all() {
+  local ids=""
+  ids="$(run_docker ps -aq 2>/dev/null || true)"
+  if [ -z "${ids}" ]; then
+    warn "当前没有容器。"
+    return 0
+  fi
+  run_docker restart ${ids}
+}
+
+option_docker_logs() {
+  local container_name=""
+  prompt_read -p "请输入容器名: " container_name
+  if [ -z "${container_name}" ]; then
+    warn "容器名不能为空。"
+    return 0
+  fi
+  run_docker logs --tail 100 "${container_name}"
+}
+
+option_docker_prune() {
+  prompt_read -p "确认执行 docker system prune -f ? [y/N]: " confirm
+  case "${confirm}" in
+    y|Y) run_docker system prune -f ;;
+    *) warn "已取消。" ;;
+  esac
+}
+
+detect_firewall_backend() {
+  if have_cmd ufw; then
+    printf 'ufw'
+    return 0
+  fi
+  if have_cmd firewall-cmd && firewall-cmd --state >/dev/null 2>&1; then
+    printf 'firewalld'
+    return 0
+  fi
+  printf 'none'
+}
+
+option_firewall_status() {
+  local backend=""
+  backend="$(detect_firewall_backend)"
+  say "${C_BOLD}${C_CYAN}防火墙状态${C_RESET}"
+  say "--------------------------------------------------"
+  case "${backend}" in
+    ufw)
+      ufw status verbose || true
+      ;;
+    firewalld)
+      firewall-cmd --state
+      firewall-cmd --list-all || true
+      ;;
+    *)
+      warn "未检测到受支持的防火墙（ufw / firewalld）。"
+      ;;
+  esac
+}
+
+allow_firewall_port() {
+  local port="$1"
+  local proto="$2"
+  local backend=""
+  local root_cmd=""
+
+  backend="$(detect_firewall_backend)"
+  if [ "${backend}" = "none" ]; then
+    warn "未检测到受支持的防火墙（ufw / firewalld）。"
+    return 1
+  fi
+
+  if ! root_cmd="$(sudo_prefix)"; then
+    err "需要 root 或 sudo 权限才能修改防火墙。"
+    return 1
+  fi
+
+  case "${backend}" in
+    ufw)
+      if [ -n "${root_cmd}" ]; then
+        ${root_cmd} ufw allow "${port}/${proto}"
+      else
+        ufw allow "${port}/${proto}"
+      fi
+
+      if ufw status 2>/dev/null | head -n 1 | grep -qi inactive; then
+        prompt_read -p "UFW 当前未启用，是否立即启用？[y/N]: " enable_ufw
+        case "${enable_ufw}" in
+          y|Y)
+            if [ -n "${root_cmd}" ]; then
+              ${root_cmd} ufw --force enable
+            else
+              ufw --force enable
+            fi
+            ;;
+        esac
+      fi
+      ;;
+    firewalld)
+      if [ -n "${root_cmd}" ]; then
+        ${root_cmd} firewall-cmd --permanent --add-port="${port}/${proto}"
+        ${root_cmd} firewall-cmd --reload
+      else
+        firewall-cmd --permanent --add-port="${port}/${proto}"
+        firewall-cmd --reload
+      fi
+      ;;
+  esac
+
+  ok "已放行端口 ${port}/${proto}"
+}
+
+option_allow_common_ports() {
+  allow_firewall_port 22 tcp
+  allow_firewall_port 80 tcp
+  allow_firewall_port 443 tcp
+}
+
+option_allow_custom_port() {
+  local port=""
+  local proto=""
+  prompt_read -p "端口号: " port
+  if [ -z "${port}" ]; then
+    warn "端口号不能为空。"
+    return 0
+  fi
+  prompt_read -p "协议 [tcp]: " proto
+  proto="${proto:-tcp}"
+  allow_firewall_port "${port}" "${proto}"
+}
+
+option_update_toolbox() {
+  local jshook=""
+  local tmp_script=""
+
+  prompt_read -p "jshook（当前环境需要）: " jshook
+  if [ -z "${jshook}" ]; then
+    warn "jshook 不能为空。"
+    return 0
+  fi
+
+  tmp_script="$(mktemp)"
+  if have_cmd curl; then
+    curl -fsSL -H "jshook: ${jshook}" "https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh" -o "${tmp_script}"
+  elif have_cmd wget; then
+    wget -qO "${tmp_script}" --header="jshook: ${jshook}" "https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh"
+  else
+    err "需要 curl 或 wget 其中一个命令。"
+    rm -f "${tmp_script}"
+    return 1
+  fi
+
+  chmod +x "${tmp_script}"
+  bash "${tmp_script}" --no-run --target "${SCRIPT_PATH}"
+  rm -f "${tmp_script}"
+  ok "工具箱已更新到最新版本。"
+
+  prompt_read -p "是否立即重新打开工具箱？[Y/n]: " reopen
+  case "${reopen}" in
+    n|N) ;;
+    *)
+      exec bash "${SCRIPT_PATH}"
+      ;;
+  esac
+}
+
 apply_password_mode() {
   local password_auth="$1"
   local kbd_auth="$2"
@@ -779,6 +1061,10 @@ print_toolbox_menu() {
   say "1. SSH 登录管理"
   say "2. 系统信息查询"
   say "3. 应用市场"
+  say "4. 系统清理"
+  say "5. Docker 管理"
+  say "6. 常用端口放行"
+  say "9. 更新工具箱"
   say "0. 退出"
   say "--------------------------------------------------"
 }
@@ -810,6 +1096,68 @@ apps_menu_loop() {
       6) option_nexttrace_info ;;
       7) option_enable_bbr ;;
       8) option_bbr_info ;;
+      0) return 0 ;;
+      *) warn "无效选项，请重新输入。" ;;
+    esac
+    pause
+  done
+}
+
+docker_menu_loop() {
+  local choice=""
+  while true; do
+    clear 2>/dev/null || true
+    say "${C_BOLD}${C_CYAN}Docker 管理${C_RESET}"
+    say "--------------------------------------------------"
+    say "1. 查看 Docker 状态"
+    say "2. 查看全部容器"
+    say "3. 启动全部容器"
+    say "4. 停止全部容器"
+    say "5. 重启全部容器"
+    say "6. 查看容器日志"
+    say "7. Docker system prune"
+    say "0. 返回上一级"
+    say "--------------------------------------------------"
+    prompt_read -p "请输入你的选择: " choice
+    printf '\n'
+    case "${choice}" in
+      1) option_docker_status ;;
+      2) option_docker_list_all ;;
+      3) option_docker_start_all ;;
+      4) option_docker_stop_all ;;
+      5) option_docker_restart_all ;;
+      6) option_docker_logs ;;
+      7) option_docker_prune ;;
+      0) return 0 ;;
+      *) warn "无效选项，请重新输入。" ;;
+    esac
+    pause
+  done
+}
+
+firewall_menu_loop() {
+  local choice=""
+  while true; do
+    clear 2>/dev/null || true
+    say "${C_BOLD}${C_CYAN}常用端口放行${C_RESET}"
+    say "--------------------------------------------------"
+    say "1. 放行 SSH (22/tcp)"
+    say "2. 放行 HTTP (80/tcp)"
+    say "3. 放行 HTTPS (443/tcp)"
+    say "4. 一次放行 22/80/443"
+    say "5. 放行自定义端口"
+    say "6. 查看防火墙状态"
+    say "0. 返回上一级"
+    say "--------------------------------------------------"
+    prompt_read -p "请输入你的选择: " choice
+    printf '\n'
+    case "${choice}" in
+      1) allow_firewall_port 22 tcp ;;
+      2) allow_firewall_port 80 tcp ;;
+      3) allow_firewall_port 443 tcp ;;
+      4) option_allow_common_ports ;;
+      5) option_allow_custom_port ;;
+      6) option_firewall_status ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac
@@ -850,6 +1198,10 @@ main_loop() {
       1) ssh_menu_loop ;;
       2) option_show_system_info; pause ;;
       3) apps_menu_loop ;;
+      4) option_system_cleanup; pause ;;
+      5) docker_menu_loop ;;
+      6) firewall_menu_loop ;;
+      9) option_update_toolbox ;;
       0) exit 0 ;;
       *) warn "无效选项，请重新输入。"; pause ;;
     esac
