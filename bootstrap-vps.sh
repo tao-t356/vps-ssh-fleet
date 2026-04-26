@@ -120,7 +120,7 @@ SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
 APP_NAME="TaoBox"
 REPO_SLUG="tao-t356/TaoBox"
-TOOLBOX_VERSION="0.11.1"
+TOOLBOX_VERSION="0.11.2"
 DEFAULT_JSHOOK="123"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
@@ -179,6 +179,35 @@ get_os_pretty_name() {
   fi
 }
 
+get_docker_summary() {
+  if ! have_cmd docker; then
+    printf 'not-installed'
+    return 0
+  fi
+
+  if docker info >/dev/null 2>&1 || (have_cmd sudo && sudo docker info >/dev/null 2>&1); then
+    printf 'ready'
+  else
+    printf 'installed'
+  fi
+}
+
+get_xanmod_summary() {
+  if uname -r 2>/dev/null | grep -qi xanmod; then
+    printf 'xanmod'
+  else
+    printf 'stock'
+  fi
+}
+
+get_bbr_summary() {
+  if have_cmd sysctl; then
+    sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || printf 'unknown'
+  else
+    printf 'unknown'
+  fi
+}
+
 print_divider() {
   say "------------------------------------------------------------"
 }
@@ -210,11 +239,17 @@ print_logo() {
   local border=""
   local title_line=""
   local line=""
+  local docker_state=""
+  local kernel_state=""
+  local bbr_state=""
 
   primary_ip="$(get_primary_ip)"
   kernel="$(uname -r 2>/dev/null || printf 'unknown')"
   os_name="$(get_os_pretty_name)"
   uptime_text="$(uptime -p 2>/dev/null || uptime 2>/dev/null || printf 'unknown')"
+  docker_state="$(get_docker_summary)"
+  kernel_state="$(get_xanmod_summary)"
+  bbr_state="$(get_bbr_summary)"
   border="$(repeat_char "═" 62)"
   title_line="${APP_NAME}  ·  VPS 管理工具箱  ·  v${TOOLBOX_VERSION}"
 
@@ -232,6 +267,9 @@ print_logo() {
   printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_BOLD}${C_CYAN}║${C_RESET}"
 
   line="Uptime : ${uptime_text}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+
+  line="Runtime: docker=${docker_state}   kernel=${kernel_state}   tcp=${bbr_state}"
   printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_BOLD}${C_CYAN}║${C_RESET}"
 
   say "${C_BOLD}${C_CYAN}╚${border}╝${C_RESET}"
