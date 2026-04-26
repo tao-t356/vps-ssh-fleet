@@ -15,9 +15,9 @@ usage() {
                         [--shortcut f] [--no-shortcut]
 
 说明:
-  - 这是一个自包含安装器，内部已经包含 ssh-key-menu.sh
+  - 这是一个自包含安装器，内部已经包含工具箱脚本
   - 第一次通过 curl 获取本脚本时，当前环境访问 GitHub 仍然需要 jshook 请求头
-  - 安装完成后，以后直接输入 f 即可打开菜单
+  - 安装完成后，以后直接输入 f 即可打开工具箱
 EOF
 }
 
@@ -117,6 +117,7 @@ write_menu_script() {
 set -euo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
+TOOLBOX_VERSION="0.5.0"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
 SSH_DIR="${CURRENT_HOME}/.ssh"
@@ -243,7 +244,7 @@ pubkey_status_text() {
   esac
 }
 
-print_menu() {
+print_ssh_menu() {
   clear 2>/dev/null || true
   say "${C_BOLD}${C_CYAN}SSH 登录管理菜单${C_RESET}"
   say "当前用户: ${CURRENT_USER}"
@@ -433,6 +434,107 @@ option_view_authorized_keys() {
   nl -ba "${AUTHORIZED_KEYS}"
 }
 
+option_show_system_info() {
+  local os_name="unknown"
+  local local_ip="unknown"
+
+  if [ -r /etc/os-release ]; then
+    os_name="$(. /etc/os-release && printf '%s' "${PRETTY_NAME:-unknown}")"
+  fi
+
+  if have_cmd hostname; then
+    local_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || printf 'unknown')"
+  fi
+
+  say "${C_BOLD}${C_CYAN}系统信息${C_RESET}"
+  say "--------------------------------------------------"
+  say "主机名: $(hostname)"
+  say "当前用户: ${CURRENT_USER}"
+  say "系统: ${os_name}"
+  say "内核: $(uname -srmo 2>/dev/null || uname -a)"
+  say "本机 IP: ${local_ip}"
+  say "启动时间: $(uptime -p 2>/dev/null || uptime)"
+  say "时间: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+  say "--------------------------------------------------"
+
+  if have_cmd free; then
+    say "[内存]"
+    free -h
+    say "--------------------------------------------------"
+  fi
+
+  if have_cmd df; then
+    say "[磁盘]"
+    df -h /
+    say "--------------------------------------------------"
+  fi
+
+  if have_cmd ss; then
+    say "[监听端口]"
+    ss -tulpn 2>/dev/null | sed -n '1,12p'
+  fi
+}
+
+option_vless_project_info() {
+  say "${C_BOLD}${C_CYAN}vless-xhttp-reality-self${C_RESET}"
+  say "--------------------------------------------------"
+  say "仓库: https://github.com/tao-t356/vless-xhttp-reality-self"
+  say "用途: Debian / Ubuntu 上菜单式部署 VLESS + XHTTP + REALITY + Hysteria2"
+  say "要求: root、域名已解析、80/443 可用"
+  say "运行方式: 会从 GitHub 拉取 scripts/install.sh 并执行"
+  say "--------------------------------------------------"
+}
+
+option_run_vless_project() {
+  local project_url="https://raw.githubusercontent.com/tao-t356/vless-xhttp-reality-self/main/scripts/install.sh"
+  local jshook=""
+  local tmp_file=""
+
+  if [ "$(id -u)" -ne 0 ]; then
+    err "这个项目建议使用 root 运行。"
+    return 1
+  fi
+
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    case "${ID:-}" in
+      debian|ubuntu) ;;
+      *)
+        warn "当前系统不是 Debian / Ubuntu，脚本可能不兼容。"
+        ;;
+    esac
+  fi
+
+  say "即将运行: vless-xhttp-reality-self"
+  say "仓库地址: ${project_url}"
+  say "注意：它会修改 Xray / Nginx / 证书等配置。"
+  prompt_read -p "确认继续？[y/N]: " confirm
+  case "${confirm}" in
+    y|Y) ;;
+    *)
+      warn "已取消。"
+      return 0
+      ;;
+  esac
+
+  prompt_read -p "jshook（当前环境需要）: " jshook
+
+  tmp_file="$(mktemp)"
+  if have_cmd curl; then
+    curl -fsSL -H "jshook: ${jshook}" "${project_url}" -o "${tmp_file}"
+  elif have_cmd wget; then
+    wget -qO "${tmp_file}" --header="jshook: ${jshook}" "${project_url}"
+  else
+    err "需要 curl 或 wget 其中一个命令。"
+    rm -f "${tmp_file}"
+    return 1
+  fi
+
+  chmod +x "${tmp_file}"
+  run_with_tty bash "${tmp_file}"
+  rm -f "${tmp_file}"
+}
+
 apply_password_mode() {
   local password_auth="$1"
   local kbd_auth="$2"
@@ -540,10 +642,45 @@ option_enable_password_login() {
   esac
 }
 
-main_loop() {
+print_toolbox_menu() {
+  clear 2>/dev/null || true
+  say "${C_BOLD}${C_CYAN}VPS 工具箱 v${TOOLBOX_VERSION}${C_RESET}"
+  say "当前用户: ${CURRENT_USER}    主机: $(hostname)"
+  say "密码登录模式: $(password_status_text)    公钥条数: $(count_authorized_keys)"
+  say "--------------------------------------------------"
+  say "1. SSH 登录管理"
+  say "2. 系统信息查询"
+  say "3. 应用市场"
+  say "0. 退出"
+  say "--------------------------------------------------"
+}
+
+apps_menu_loop() {
   local choice=""
   while true; do
-    print_menu
+    clear 2>/dev/null || true
+    say "${C_BOLD}${C_CYAN}应用市场${C_RESET}"
+    say "--------------------------------------------------"
+    say "1. 运行 vless-xhttp-reality-self"
+    say "2. 查看 vless-xhttp-reality-self 说明"
+    say "0. 返回上一级"
+    say "--------------------------------------------------"
+    prompt_read -p "请输入你的选择: " choice
+    printf '\n'
+    case "${choice}" in
+      1) option_run_vless_project ;;
+      2) option_vless_project_info ;;
+      0) return 0 ;;
+      *) warn "无效选项，请重新输入。" ;;
+    esac
+    pause
+  done
+}
+
+ssh_menu_loop() {
+  local choice=""
+  while true; do
+    print_ssh_menu
     prompt_read -p "请输入你的选择: " choice
     printf '\n'
     case "${choice}" in
@@ -556,10 +693,26 @@ main_loop() {
       7) option_view_authorized_keys ;;
       8) option_disable_password_login ;;
       9) option_enable_password_login ;;
-      0) exit 0 ;;
+      0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac
     pause
+  done
+}
+
+main_loop() {
+  local choice=""
+  while true; do
+    print_toolbox_menu
+    prompt_read -p "请输入你的选择: " choice
+    printf '\n'
+    case "${choice}" in
+      1) ssh_menu_loop ;;
+      2) option_show_system_info; pause ;;
+      3) apps_menu_loop ;;
+      0) exit 0 ;;
+      *) warn "无效选项，请重新输入。"; pause ;;
+    esac
   done
 }
 
@@ -577,7 +730,7 @@ main() {
   fi
 
   if [ "${RUN_AFTER_INSTALL}" = "1" ]; then
-    echo "正在启动菜单..."
+    echo "正在启动工具箱..."
     exec bash "${TARGET_PATH}"
   fi
 }

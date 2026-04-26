@@ -124,7 +124,7 @@ curl.exe -H "jshook: 123" https://github.com/你的GitHub用户名.keys
 登录后执行：
 
 ```bash
-curl -fsSL -H "jshook: <YOUR_JSHOOK>" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/refs/heads/main/bootstrap-vps.sh | bash -s -- --jshook <YOUR_JSHOOK>
+curl -fsSL -H "jshook: <YOUR_JSHOOK>" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash
 ```
 
 如果你当前环境里的 `jshook` 是 `123`，可直接用：
@@ -151,9 +151,19 @@ f
 
 ---
 
-### 第 5 步：在 VPS 菜单里从 GitHub 导入公钥
+### 第 5 步：在 VPS 工具箱里从 GitHub 导入公钥
 
 菜单打开后，输入：
+
+```text
+1
+```
+
+也就是：
+
+- `1. SSH 登录管理`
+
+进入 SSH 子菜单后，再输入：
 
 ```text
 3
@@ -328,17 +338,29 @@ chmod +x ~/ssh-key-menu.sh
 ./ssh-key-menu.sh
 ```
 
-### 菜单功能
+### 当前工具箱主菜单
+
+- `1` SSH 登录管理
+- `2` 系统信息查询
+- `3` 应用市场
+- `0` 退出
+
+### SSH 登录管理子菜单
 
 - `1` 生成本机密钥对
 - `2` 手动输入一行公钥
 - `3` 从 `GitHub 用户名.keys` 导入公钥
-- `4` 从 URL 导入公钥
+- `4` 从 URL 导入已有公钥
 - `5` 编辑 `~/.ssh/authorized_keys`
 - `6` 查看本机密钥
 - `7` 查看当前 `authorized_keys`
 - `8` 关闭密码登录
 - `9` 开启密码登录
+
+### 应用市场
+
+- `1` 运行 `vless-xhttp-reality-self`
+- `2` 查看 `vless-xhttp-reality-self` 说明
 
 > 如果你在当前这个本地环境里用 GitHub / URL 导入，脚本会让你输入 `jshook`。
 
@@ -354,11 +376,11 @@ curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-f
 
 它会：
 
-1. 从 GitHub 拉取最新 `ssh-key-menu.sh`
+1. 从 GitHub 拉取最新工具箱脚本
 2. 保存到 `~/ssh-key-menu.sh`
 3. 自动加执行权限
 4. 默认安装一个快捷命令 `f`
-5. 立即打开交互菜单
+5. 立即打开 VPS 工具箱
 
 以后你在 VPS 里直接输入：
 
