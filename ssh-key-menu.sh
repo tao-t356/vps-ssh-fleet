@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
-TOOLBOX_VERSION="0.8.0"
+TOOLBOX_VERSION="0.9.0"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
 SSH_DIR="${CURRENT_HOME}/.ssh"
@@ -33,6 +33,16 @@ ok() { printf '%s%s%s\n' "${C_GREEN}" "$*" "${C_RESET}"; }
 warn() { printf '%s%s%s\n' "${C_YELLOW}" "$*" "${C_RESET}"; }
 err() { printf '%s%s%s\n' "${C_RED}" "$*" "${C_RESET}" >&2; }
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+print_logo() {
+  say "${C_BOLD}${C_CYAN} __     ______   _____   _______             _ _                ${C_RESET}"
+  say "${C_BOLD}${C_CYAN} \\ \\   / /  _ \\ / ____| |__   __|           | | |               ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}  \\ \\_/ /| |_) | (___      | | ___   ___ ___| | |__   _____  __  ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}   \\   / |  _ < \\___ \\     | |/ _ \\ / _ / __| | '_ \\ / _ \\ \\/ /  ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}    | |  | |_) |____) |    | | (_) | (_) (__| | |_) | (_) >  <   ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}    |_|  |____/|_____/     |_|\\___/ \\___\\___|_|_.__/ \\___/_/\\_\\  ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}                         v${TOOLBOX_VERSION}${C_RESET}"
+}
 
 run_docker() {
   if ! have_cmd docker; then
@@ -149,6 +159,7 @@ pubkey_status_text() {
 
 print_ssh_menu() {
   clear 2>/dev/null || true
+  print_logo
   say "${C_BOLD}${C_CYAN}SSH 登录管理菜单${C_RESET}"
   say "当前用户: ${CURRENT_USER}"
   say "密码登录模式: $(password_status_text)"
@@ -831,6 +842,142 @@ option_update_toolbox() {
   esac
 }
 
+option_ping_test() {
+  local target=""
+  prompt_read -p "请输入目标域名或 IP: " target
+  if [ -z "${target}" ]; then
+    warn "目标不能为空。"
+    return 0
+  fi
+  if have_cmd ping; then
+    run_with_tty ping -c 4 "${target}"
+  else
+    err "当前系统没有 ping 命令。"
+  fi
+}
+
+option_trace_test() {
+  local target=""
+  prompt_read -p "请输入目标域名或 IP: " target
+  if [ -z "${target}" ]; then
+    warn "目标不能为空。"
+    return 0
+  fi
+
+  if have_cmd traceroute; then
+    run_with_tty traceroute "${target}"
+  elif have_cmd tracepath; then
+    run_with_tty tracepath "${target}"
+  else
+    err "当前系统没有 traceroute / tracepath。"
+  fi
+}
+
+option_show_ip_route() {
+  if have_cmd ip; then
+    ip route show
+  elif have_cmd route; then
+    route -n
+  else
+    err "当前系统没有 ip / route 命令。"
+  fi
+}
+
+option_show_listening_ports() {
+  if have_cmd ss; then
+    ss -tulpn
+  elif have_cmd netstat; then
+    netstat -tulpn
+  else
+    err "当前系统没有 ss / netstat。"
+  fi
+}
+
+option_show_top_processes() {
+  say "[CPU TOP 10]"
+  ps -eo pid,ppid,user,%cpu,%mem,comm --sort=-%cpu | sed -n '1,11p'
+  say "--------------------------------------------------"
+  say "[MEM TOP 10]"
+  ps -eo pid,ppid,user,%cpu,%mem,comm --sort=-%mem | sed -n '1,11p'
+}
+
+option_show_common_service_status() {
+  local services="ssh sshd nginx docker xray hysteria-server hysteria"
+  local svc=""
+
+  if have_cmd systemctl; then
+    for svc in ${services}; do
+      if systemctl list-unit-files 2>/dev/null | awk '{print $1}' | grep -qx "${svc}.service"; then
+        printf '%-18s %s\n' "${svc}" "$(systemctl is-active "${svc}" 2>/dev/null || printf 'unknown')"
+      fi
+    done
+  else
+    warn "当前系统没有 systemctl，无法统一查询服务状态。"
+  fi
+}
+
+option_restart_ssh_service() {
+  local root_cmd=""
+  if ! root_cmd="$(sudo_prefix)"; then
+    err "需要 root 或 sudo 权限才能重启 SSH 服务。"
+    return 1
+  fi
+
+  prompt_read -p "确认重启 SSH 服务？[y/N]: " confirm
+  case "${confirm}" in
+    y|Y) ;;
+    *)
+      warn "已取消。"
+      return 0
+      ;;
+  esac
+
+  if [ -n "${root_cmd}" ]; then
+    ${root_cmd} systemctl restart sshd 2>/dev/null || \
+    ${root_cmd} systemctl restart ssh 2>/dev/null || \
+    ${root_cmd} service sshd restart 2>/dev/null || \
+    ${root_cmd} service ssh restart 2>/dev/null
+  else
+    systemctl restart sshd 2>/dev/null || \
+    systemctl restart ssh 2>/dev/null || \
+    service sshd restart 2>/dev/null || \
+    service ssh restart 2>/dev/null
+  fi
+  ok "SSH 服务已重启。"
+}
+
+option_recent_logins() {
+  if have_cmd last; then
+    last -a | sed -n '1,20p'
+  else
+    err "当前系统没有 last 命令。"
+  fi
+}
+
+option_reboot_server() {
+  local root_cmd=""
+  if ! root_cmd="$(sudo_prefix)"; then
+    err "需要 root 或 sudo 权限才能重启服务器。"
+    return 1
+  fi
+
+  warn "重启服务器会导致当前 SSH 会话断开。"
+  prompt_read -p "确认重启服务器？[y/N]: " confirm
+  case "${confirm}" in
+    y|Y) ;;
+    *)
+      warn "已取消。"
+      return 0
+      ;;
+  esac
+
+  if [ -n "${root_cmd}" ]; then
+    ${root_cmd} reboot
+  else
+    reboot
+  fi
+}
+
 apply_password_mode() {
   local password_auth="$1"
   local kbd_auth="$2"
@@ -940,6 +1087,7 @@ option_enable_password_login() {
 
 print_toolbox_menu() {
   clear 2>/dev/null || true
+  print_logo
   say "${C_BOLD}${C_CYAN}VPS 工具箱 v${TOOLBOX_VERSION}${C_RESET}"
   say "当前用户: ${CURRENT_USER}    主机: $(hostname)"
   say "密码登录模式: $(password_status_text)    公钥条数: $(count_authorized_keys)"
@@ -950,6 +1098,8 @@ print_toolbox_menu() {
   say "4. 系统清理"
   say "5. Docker 管理"
   say "6. 常用端口放行"
+  say "7. 网络工具"
+  say "8. 系统工具"
   say "9. 更新工具箱"
   say "0. 退出"
   say "--------------------------------------------------"
@@ -959,6 +1109,7 @@ apps_menu_loop() {
   local choice=""
   while true; do
     clear 2>/dev/null || true
+    print_logo
     say "${C_BOLD}${C_CYAN}应用市场${C_RESET}"
     say "--------------------------------------------------"
     say "1. 运行 vless-xhttp-reality-self"
@@ -993,6 +1144,7 @@ docker_menu_loop() {
   local choice=""
   while true; do
     clear 2>/dev/null || true
+    print_logo
     say "${C_BOLD}${C_CYAN}Docker 管理${C_RESET}"
     say "--------------------------------------------------"
     say "1. 查看 Docker 状态"
@@ -1025,6 +1177,7 @@ firewall_menu_loop() {
   local choice=""
   while true; do
     clear 2>/dev/null || true
+    print_logo
     say "${C_BOLD}${C_CYAN}常用端口放行${C_RESET}"
     say "--------------------------------------------------"
     say "1. 放行 SSH (22/tcp)"
@@ -1044,6 +1197,70 @@ firewall_menu_loop() {
       4) option_allow_common_ports ;;
       5) option_allow_custom_port ;;
       6) option_firewall_status ;;
+      0) return 0 ;;
+      *) warn "无效选项，请重新输入。" ;;
+    esac
+    pause
+  done
+}
+
+network_menu_loop() {
+  local choice=""
+  while true; do
+    clear 2>/dev/null || true
+    print_logo
+    say "${C_BOLD}${C_CYAN}网络工具${C_RESET}"
+    say "--------------------------------------------------"
+    say "1. 安装 NextTrace"
+    say "2. 查看 NextTrace 说明"
+    say "3. 启用 BBR"
+    say "4. 查看 BBR 状态"
+    say "5. Ping 测试"
+    say "6. Traceroute / Tracepath"
+    say "7. 查看本机路由"
+    say "0. 返回上一级"
+    say "--------------------------------------------------"
+    prompt_read -p "请输入你的选择: " choice
+    printf '\n'
+    case "${choice}" in
+      1) option_run_nexttrace ;;
+      2) option_nexttrace_info ;;
+      3) option_enable_bbr ;;
+      4) option_bbr_info ;;
+      5) option_ping_test ;;
+      6) option_trace_test ;;
+      7) option_show_ip_route ;;
+      0) return 0 ;;
+      *) warn "无效选项，请重新输入。" ;;
+    esac
+    pause
+  done
+}
+
+system_tools_menu_loop() {
+  local choice=""
+  while true; do
+    clear 2>/dev/null || true
+    print_logo
+    say "${C_BOLD}${C_CYAN}系统工具${C_RESET}"
+    say "--------------------------------------------------"
+    say "1. 查看监听端口"
+    say "2. 查看高占用进程"
+    say "3. 查看常见服务状态"
+    say "4. 重启 SSH 服务"
+    say "5. 查看最近登录"
+    say "6. 重启服务器"
+    say "0. 返回上一级"
+    say "--------------------------------------------------"
+    prompt_read -p "请输入你的选择: " choice
+    printf '\n'
+    case "${choice}" in
+      1) option_show_listening_ports ;;
+      2) option_show_top_processes ;;
+      3) option_show_common_service_status ;;
+      4) option_restart_ssh_service ;;
+      5) option_recent_logins ;;
+      6) option_reboot_server ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac
@@ -1087,6 +1304,8 @@ main_loop() {
       4) option_system_cleanup; pause ;;
       5) docker_menu_loop ;;
       6) firewall_menu_loop ;;
+      7) network_menu_loop ;;
+      8) system_tools_menu_loop ;;
       9) option_update_toolbox ;;
       0) exit 0 ;;
       *) warn "无效选项，请重新输入。"; pause ;;
