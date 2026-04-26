@@ -1262,12 +1262,11 @@ option_reboot_server() {
   fi
 }
 
-option_dd_reinstall_system() {
+run_dd_reinstall_system() {
   local root_cmd=""
   local jshook=""
-  local os_choice=""
-  local distro="debian"
-  local version="13"
+  local distro="$1"
+  local version="$2"
   local root_pass=""
   local tmp_file=""
   local dd_url="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh"
@@ -1277,42 +1276,6 @@ option_dd_reinstall_system() {
     err "需要 root 或 sudo 权限才能执行 DD 重装。"
     return 1
   fi
-
-  warn "DD 重装系统是高危操作。"
-  say "它通常会："
-  say "- 覆盖当前系统"
-  say "- 中断当前 SSH 会话"
-  say "- 可能自动重启"
-  say "- 导致当前数据不可恢复"
-  say "脚本来源: ${dd_url}"
-  say "请选择系统："
-  say "1. Debian 12"
-  say "2. Debian 13"
-  say "3. Ubuntu 22.04"
-  say "4. Ubuntu 24.04"
-  prompt_read -p "请输入你的选择 [2]: " os_choice
-  case "${os_choice:-2}" in
-    1)
-      distro="debian"
-      version="12"
-      ;;
-    2)
-      distro="debian"
-      version="13"
-      ;;
-    3)
-      distro="ubuntu"
-      version="22.04"
-      ;;
-    4)
-      distro="ubuntu"
-      version="24.04"
-      ;;
-    *)
-      warn "无效选项，已取消。"
-      return 0
-      ;;
-  esac
 
   prompt_secret -p "新系统 root 密码: " root_pass
   printf '\n'
@@ -1351,6 +1314,39 @@ option_dd_reinstall_system() {
   else
     run_with_tty bash "${tmp_file}" "${distro_flag}" "${version}" -pwd "${root_pass}"
   fi
+}
+
+dd_reinstall_menu_loop() {
+  local choice=""
+  while true; do
+    clear 2>/dev/null || true
+    print_logo
+    say "${C_BOLD}${C_RED}DD 重装系统（危险）${C_RESET}"
+    say "--------------------------------------------------"
+    say "警告："
+    say "- 会覆盖当前系统"
+    say "- 会中断当前 SSH 会话"
+    say "- 可能自动重启"
+    say "- 当前数据可能不可恢复"
+    say "--------------------------------------------------"
+    say "1. Debian 12"
+    say "2. Debian 13"
+    say "3. Ubuntu 22.04"
+    say "4. Ubuntu 24.04"
+    say "0. 返回上一级"
+    say "--------------------------------------------------"
+    prompt_read -p "请输入你的选择 [2]: " choice
+    printf '\n'
+    case "${choice:-2}" in
+      1) run_dd_reinstall_system "debian" "12" ;;
+      2) run_dd_reinstall_system "debian" "13" ;;
+      3) run_dd_reinstall_system "ubuntu" "22.04" ;;
+      4) run_dd_reinstall_system "ubuntu" "24.04" ;;
+      0) return 0 ;;
+      *) warn "无效选项，请重新输入。" ;;
+    esac
+    pause
+  done
 }
 
 apply_password_mode() {
@@ -1602,7 +1598,7 @@ system_tools_menu_loop() {
       4) option_restart_ssh_service ;;
       5) option_recent_logins ;;
       6) option_reboot_server ;;
-      7) option_dd_reinstall_system ;;
+      7) dd_reinstall_menu_loop ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac
