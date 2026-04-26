@@ -118,7 +118,7 @@ set -euo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
-TOOLBOX_VERSION="0.9.0"
+TOOLBOX_VERSION="0.10.0"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
 SSH_DIR="${CURRENT_HOME}/.ssh"
@@ -179,6 +179,14 @@ prompt_read() {
     read -r "$@" < /dev/tty
   else
     read -r "$@"
+  fi
+}
+
+prompt_secret() {
+  if [ -r /dev/tty ]; then
+    read -r -s "$@" < /dev/tty
+  else
+    read -r -s "$@"
   fi
 }
 
@@ -1252,6 +1260,88 @@ option_reboot_server() {
   fi
 }
 
+option_dd_reinstall_system() {
+  local root_cmd=""
+  local jshook=""
+  local distro=""
+  local version=""
+  local root_pass=""
+  local root_pass_confirm=""
+  local tmp_file=""
+  local dd_url="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh"
+  local distro_flag=""
+
+  if ! root_cmd="$(sudo_prefix)"; then
+    err "需要 root 或 sudo 权限才能执行 DD 重装。"
+    return 1
+  fi
+
+  warn "DD 重装系统是高危操作。"
+  say "它通常会："
+  say "- 覆盖当前系统"
+  say "- 中断当前 SSH 会话"
+  say "- 可能自动重启"
+  say "- 导致当前数据不可恢复"
+  say "脚本来源: ${dd_url}"
+  prompt_read -p "若确认继续，请输入 YES: " confirm
+  if [ "${confirm}" != "YES" ]; then
+    warn "已取消。"
+    return 0
+  fi
+
+  prompt_read -p "系统类型 [debian]: " distro
+  distro="${distro:-debian}"
+  prompt_read -p "系统版本 [13]: " version
+  version="${version:-13}"
+  prompt_secret -p "新系统 root 密码: " root_pass
+  printf '\n'
+  prompt_secret -p "再次输入 root 密码: " root_pass_confirm
+  printf '\n'
+  if [ -z "${root_pass}" ]; then
+    warn "密码不能为空。"
+    return 0
+  fi
+  if [ "${root_pass}" != "${root_pass_confirm}" ]; then
+    err "两次输入的密码不一致。"
+    return 1
+  fi
+
+  prompt_read -p "jshook（当前环境需要）: " jshook
+  if [ -z "${jshook}" ]; then
+    warn "jshook 不能为空。"
+    return 0
+  fi
+
+  case "${distro}" in
+    debian|ubuntu|centos|alma|rocky|almalinux|fedora)
+      distro_flag="-${distro}"
+      ;;
+    *)
+      err "暂不支持的系统类型: ${distro}"
+      return 1
+      ;;
+  esac
+
+  tmp_file="$(mktemp)"
+  if have_cmd curl; then
+    curl -fsSL -H "jshook: ${jshook}" "${dd_url}" -o "${tmp_file}"
+  elif have_cmd wget; then
+    wget --no-check-certificate -qO "${tmp_file}" --header="jshook: ${jshook}" "${dd_url}"
+  else
+    err "需要 curl 或 wget 其中一个命令。"
+    rm -f "${tmp_file}"
+    return 1
+  fi
+
+  chmod +x "${tmp_file}"
+  warn "即将开始 DD 重装，当前会话可能很快断开。"
+  if [ -n "${root_cmd}" ]; then
+    run_with_tty ${root_cmd} bash "${tmp_file}" "${distro_flag}" "${version}" -pwd "${root_pass}"
+  else
+    run_with_tty bash "${tmp_file}" "${distro_flag}" "${version}" -pwd "${root_pass}"
+  fi
+}
+
 apply_password_mode() {
   local password_auth="$1"
   local kbd_auth="$2"
@@ -1489,6 +1579,7 @@ system_tools_menu_loop() {
     say "4. 重启 SSH 服务"
     say "5. 查看最近登录"
     say "6. 重启服务器"
+    say "7. DD 重装系统（危险）"
     say "0. 返回上一级"
     say "--------------------------------------------------"
     prompt_read -p "请输入你的选择: " choice
@@ -1500,6 +1591,7 @@ system_tools_menu_loop() {
       4) option_restart_ssh_service ;;
       5) option_recent_logins ;;
       6) option_reboot_server ;;
+      7) option_dd_reinstall_system ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac
