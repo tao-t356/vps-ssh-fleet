@@ -606,6 +606,122 @@ option_run_nexttrace() {
     "它会在线安装 NextTrace。"
 }
 
+option_xanmod_info() {
+  local level="unknown"
+  local package_name="unknown"
+  local current_kernel=""
+  local current_cc="unknown"
+  local current_qdisc="unknown"
+
+  level="$(detect_x86_64_psabi_level 2>/dev/null || printf 'unknown')"
+  package_name="$(detect_xanmod_package 2>/dev/null || printf 'unknown')"
+  current_kernel="$(uname -r 2>/dev/null || printf 'unknown')"
+  if have_cmd sysctl; then
+    current_cc="$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || printf 'unknown')"
+    current_qdisc="$(sysctl -n net.core.default_qdisc 2>/dev/null || printf 'unknown')"
+  fi
+
+  say "${C_BOLD}${C_CYAN}XanMod / BBRv3 状态${C_RESET}"
+  say "--------------------------------------------------"
+  say "当前内核: ${current_kernel}"
+  if printf '%s' "${current_kernel}" | grep -qi xanmod; then
+    say "XanMod 状态: 已安装"
+  else
+    say "XanMod 状态: 未检测到"
+  fi
+  say "CPU x86-64 psABI level: ${level}"
+  say "推荐安装包: ${package_name}"
+  say "当前拥塞控制算法: ${current_cc}"
+  say "当前默认队列算法: ${current_qdisc}"
+  say "说明: XanMod 官方当前标注内置并默认启用 Google's BBRv3 TCP congestion control（名称仍显示为 bbr）"
+  say "--------------------------------------------------"
+}
+
+option_install_xanmod() {
+  local root_cmd=""
+  local jshook=""
+  local package_name=""
+  local codename=""
+  local tmp_script=""
+
+  if [ "$(uname -m 2>/dev/null)" != "x86_64" ]; then
+    err "当前只为 x86_64 设计了 XanMod 安装流程。"
+    return 1
+  fi
+
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    case "${ID:-}" in
+      debian|ubuntu) ;;
+      *)
+        err "XanMod 安装流程当前只支持 Debian / Ubuntu。"
+        return 1
+        ;;
+    esac
+  fi
+
+  if ! root_cmd="$(sudo_prefix)"; then
+    err "需要 root 或 sudo 权限才能安装 XanMod。"
+    return 1
+  fi
+
+  package_name="$(detect_xanmod_package 2>/dev/null || true)"
+  codename="$(get_linux_codename 2>/dev/null || true)"
+  if [ -z "${package_name}" ] || [ -z "${codename}" ]; then
+    err "无法识别 CPU 等级或系统代号，已停止。"
+    return 1
+  fi
+
+  say "即将安装 XanMod 内核。"
+  say "系统代号: ${codename}"
+  say "推荐安装包: ${package_name}"
+  say "说明: XanMod 官方当前包含并默认启用 BBRv3（名称显示为 bbr）。"
+  say "安装完成后通常需要重启服务器。"
+  prompt_read -p "确认继续？[y/N]: " confirm
+  case "${confirm}" in
+    y|Y) ;;
+    *)
+      warn "已取消。"
+      return 0
+      ;;
+  esac
+
+  prompt_read -p "jshook（当前环境需要）: " jshook
+  if [ -z "${jshook}" ]; then
+    warn "jshook 不能为空。"
+    return 0
+  fi
+
+  tmp_script="$(mktemp)"
+  cat > "${tmp_script}" <<EOF
+set -e
+export DEBIAN_FRONTEND=noninteractive
+
+mkdir -p /etc/apt/keyrings
+
+if command -v apt-get >/dev/null 2>&1; then
+  apt-get update -y
+  apt-get install -y ca-certificates curl wget gnupg lsb-release
+fi
+
+curl -fsSL -H "jshook: ${jshook}" https://dl.xanmod.org/archive.key | gpg --dearmor -o /etc/apt/keyrings/xanmod-archive-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org ${codename} main" > /etc/apt/sources.list.d/xanmod-release.list
+
+apt-get update
+apt-get install -y ${package_name}
+EOF
+
+  if [ -n "${root_cmd}" ]; then
+    ${root_cmd} bash "${tmp_script}"
+  else
+    bash "${tmp_script}"
+  fi
+  rm -f "${tmp_script}"
+
+  ok "XanMod 安装命令已执行完成。"
+  warn "请确认安装日志无报错，然后重启系统切换到新内核。"
+}
+
 option_bbr_info() {
   local cc="unknown"
   local qdisc="unknown"
@@ -954,6 +1070,50 @@ option_update_toolbox() {
       exec bash "${SCRIPT_PATH}"
       ;;
   esac
+}
+
+detect_x86_64_psabi_level() {
+  awk '
+    BEGIN {
+      level=0
+      while (!/flags/) {
+        if ((getline < "/proc/cpuinfo") != 1) exit 1
+      }
+      if (/lm/&&/cmov/&&/cx8/&&/fpu/&&/fxsr/&&/mmx/&&/syscall/&&/sse2/) level = 1
+      if (level == 1 && /cx16/&&/lahf/&&/popcnt/&&/sse4_1/&&/sse4_2/&&/ssse3/) level = 2
+      if (level == 2 && /avx/&&/avx2/&&/bmi1/&&/bmi2/&&/f16c/&&/fma/&&/abm/&&/movbe/&&/xsave/) level = 3
+      if (level == 3 && /avx512f/&&/avx512bw/&&/avx512cd/&&/avx512dq/&&/avx512vl/) level = 4
+      if (level > 0) {
+        print level
+        exit 0
+      }
+      exit 1
+    }'
+}
+
+detect_xanmod_package() {
+  local level=""
+  level="$(detect_x86_64_psabi_level 2>/dev/null || printf '0')"
+  case "${level}" in
+    4|3) printf 'linux-xanmod-x64v3' ;;
+    2) printf 'linux-xanmod-x64v2' ;;
+    1) printf 'linux-xanmod-lts-x64v1' ;;
+    *) return 1 ;;
+  esac
+}
+
+get_linux_codename() {
+  if have_cmd lsb_release; then
+    lsb_release -sc 2>/dev/null && return 0
+  fi
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    if [ -n "${VERSION_CODENAME:-}" ]; then
+      printf '%s\n' "${VERSION_CODENAME}"
+      return 0
+    fi
+  fi
+  return 1
 }
 
 option_ping_test() {
@@ -1325,25 +1485,29 @@ network_menu_loop() {
     print_logo
     say "${C_BOLD}${C_CYAN}网络工具${C_RESET}"
     say "--------------------------------------------------"
-    say "1. 安装 NextTrace"
-    say "2. 查看 NextTrace 说明"
-    say "3. 启用 BBR"
-    say "4. 查看 BBR 状态"
-    say "5. Ping 测试"
-    say "6. Traceroute / Tracepath"
-    say "7. 查看本机路由"
+    say "1. 安装 XanMod 内核"
+    say "2. 查看 XanMod / BBRv3 状态"
+    say "3. 安装 NextTrace"
+    say "4. 查看 NextTrace 说明"
+    say "5. 启用 BBR"
+    say "6. 查看 BBR 状态"
+    say "7. Ping 测试"
+    say "8. Traceroute / Tracepath"
+    say "9. 查看本机路由"
     say "0. 返回上一级"
     say "--------------------------------------------------"
     prompt_read -p "请输入你的选择: " choice
     printf '\n'
     case "${choice}" in
-      1) option_run_nexttrace ;;
-      2) option_nexttrace_info ;;
-      3) option_enable_bbr ;;
-      4) option_bbr_info ;;
-      5) option_ping_test ;;
-      6) option_trace_test ;;
-      7) option_show_ip_route ;;
+      1) option_install_xanmod ;;
+      2) option_xanmod_info ;;
+      3) option_run_nexttrace ;;
+      4) option_nexttrace_info ;;
+      5) option_enable_bbr ;;
+      6) option_bbr_info ;;
+      7) option_ping_test ;;
+      8) option_trace_test ;;
+      9) option_show_ip_route ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac

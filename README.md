@@ -395,13 +395,15 @@ chmod +x ~/ssh-key-menu.sh
 
 ### 网络工具
 
-- `1` 安装 `NextTrace`
-- `2` 查看 `NextTrace` 说明
-- `3` 启用 `BBR`
-- `4` 查看 `BBR` 状态
-- `5` `ping` 测试
-- `6` `traceroute / tracepath`
-- `7` 查看本机路由
+- `1` 安装 `XanMod` 内核
+- `2` 查看 `XanMod / BBRv3` 状态
+- `3` 安装 `NextTrace`
+- `4` 查看 `NextTrace` 说明
+- `5` 启用 `BBR`
+- `6` 查看 `BBR` 状态
+- `7` `ping` 测试
+- `8` `traceroute / tracepath`
+- `9` 查看本机路由
 
 ### 系统工具
 
