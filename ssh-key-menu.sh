@@ -5,6 +5,7 @@ set -euo pipefail
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
 TOOLBOX_VERSION="0.10.0"
+DEFAULT_JSHOOK="123"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
 SSH_DIR="${CURRENT_HOME}/.ssh"
@@ -33,6 +34,10 @@ ok() { printf '%s%s%s\n' "${C_GREEN}" "$*" "${C_RESET}"; }
 warn() { printf '%s%s%s\n' "${C_YELLOW}" "$*" "${C_RESET}"; }
 err() { printf '%s%s%s\n' "${C_RED}" "$*" "${C_RESET}" >&2; }
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+get_effective_jshook() {
+  printf '%s' "${JSHOOK:-${DEFAULT_JSHOOK}}"
+}
 
 print_logo() {
   say "${C_BOLD}${C_CYAN} __     ______   _____   _______             _ _                ${C_RESET}"
@@ -208,16 +213,23 @@ validate_public_key_line() {
 fetch_url_text() {
   local url="$1"
   local jshook="${2:-}"
+  local effective_jshook=""
+
+  if [ -z "${jshook}" ]; then
+    effective_jshook="$(get_effective_jshook)"
+  else
+    effective_jshook="${jshook}"
+  fi
 
   if have_cmd curl; then
-    if [ -n "${jshook}" ]; then
-      curl -fsSL -H "jshook: ${jshook}" "${url}"
+    if [ -n "${effective_jshook}" ]; then
+      curl -fsSL -H "jshook: ${effective_jshook}" "${url}"
     else
       curl -fsSL "${url}"
     fi
   elif have_cmd wget; then
-    if [ -n "${jshook}" ]; then
-      wget -qO- --header="jshook: ${jshook}" "${url}"
+    if [ -n "${effective_jshook}" ]; then
+      wget -qO- --header="jshook: ${effective_jshook}" "${url}"
     else
       wget -qO- "${url}"
     fi
@@ -274,7 +286,6 @@ option_manual_key() {
 
 option_import_github() {
   local gh_user=""
-  local jshook=""
   local url=""
   local body=""
 
@@ -284,9 +295,8 @@ option_import_github() {
     return 0
   fi
 
-  prompt_read -p "jshook（当前环境建议填写）: " jshook
   url="https://github.com/${gh_user}.keys"
-  body="$(fetch_url_text "${url}" "${jshook}")" || return 1
+  body="$(fetch_url_text "${url}")" || return 1
 
   if [ -z "${body}" ]; then
     err "没有拉取到任何公钥，请确认 ${gh_user} 账号下已经上传了公钥。"
@@ -299,7 +309,6 @@ option_import_github() {
 
 option_import_url() {
   local url=""
-  local jshook=""
   local body=""
 
   prompt_read -p "公钥 URL: " url
@@ -308,8 +317,7 @@ option_import_url() {
     return 0
   fi
 
-  prompt_read -p "jshook（如果需要）: " jshook
-  body="$(fetch_url_text "${url}" "${jshook}")" || return 1
+  body="$(fetch_url_text "${url}")" || return 1
 
   if [ -z "${body}" ]; then
     err "URL 返回为空。"
@@ -431,7 +439,7 @@ run_remote_installer() {
       ;;
   esac
 
-  prompt_read -p "jshook（当前环境需要）: " jshook
+  jshook="$(get_effective_jshook)"
 
   tmp_file="$(mktemp)"
   if have_cmd curl; then
@@ -580,11 +588,7 @@ option_install_xanmod() {
       ;;
   esac
 
-  prompt_read -p "jshook（当前环境需要）: " jshook
-  if [ -z "${jshook}" ]; then
-    warn "jshook 不能为空。"
-    return 0
-  fi
+  jshook="$(get_effective_jshook)"
 
   tmp_script="$(mktemp)"
   cat > "${tmp_script}" <<EOF
@@ -935,11 +939,7 @@ option_update_toolbox() {
   local jshook=""
   local tmp_script=""
 
-  prompt_read -p "jshook（当前环境需要）: " jshook
-  if [ -z "${jshook}" ]; then
-    warn "jshook 不能为空。"
-    return 0
-  fi
+  jshook="$(get_effective_jshook)"
 
   tmp_script="$(mktemp)"
   if have_cmd curl; then
@@ -1192,11 +1192,7 @@ option_dd_reinstall_system() {
     return 1
   fi
 
-  prompt_read -p "jshook（当前环境需要）: " jshook
-  if [ -z "${jshook}" ]; then
-    warn "jshook 不能为空。"
-    return 0
-  fi
+  jshook="$(get_effective_jshook)"
 
   case "${distro}" in
     debian|ubuntu|centos|alma|rocky|almalinux|fedora)
