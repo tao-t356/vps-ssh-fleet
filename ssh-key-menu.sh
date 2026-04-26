@@ -1254,32 +1254,27 @@ print_toolbox_menu() {
   say "--------------------------------------------------"
   say "1. SSH 登录管理"
   say "2. 系统信息查询"
-  say "3. 应用市场"
-  say "4. 系统清理"
-  say "5. Docker 管理"
-  say "6. 常用端口放行"
-  say "7. 网络工具"
-  say "8. 系统工具"
-  say "9. 更新工具箱"
+  say "3. VLESS / XHTTP / REALITY"
+  say "4. Docker + Nginx Proxy Manager"
+  say "5. 系统清理"
+  say "6. Docker 管理"
+  say "7. 常用端口放行"
+  say "8. 网络工具"
+  say "9. 系统工具"
+  say "10. 更新工具箱"
   say "0. 退出"
   say "--------------------------------------------------"
 }
 
-apps_menu_loop() {
+vless_menu_loop() {
   local choice=""
   while true; do
     clear 2>/dev/null || true
     print_logo
-    say "${C_BOLD}${C_CYAN}应用市场${C_RESET}"
+    say "${C_BOLD}${C_CYAN}VLESS / XHTTP / REALITY${C_RESET}"
     say "--------------------------------------------------"
     say "1. 运行 vless-xhttp-reality-self"
     say "2. 查看 vless-xhttp-reality-self 说明"
-    say "3. 安装 Docker + Nginx Proxy Manager"
-    say "4. 查看 Docker + Nginx Proxy Manager 说明"
-    say "5. 安装 NextTrace"
-    say "6. 查看 NextTrace 说明"
-    say "7. 启用 BBR"
-    say "8. 查看 BBR 状态"
     say "0. 返回上一级"
     say "--------------------------------------------------"
     prompt_read -p "请输入你的选择: " choice
@@ -1287,12 +1282,29 @@ apps_menu_loop() {
     case "${choice}" in
       1) option_run_vless_project ;;
       2) option_vless_project_info ;;
-      3) option_run_npm_docker ;;
-      4) option_npm_docker_info ;;
-      5) option_run_nexttrace ;;
-      6) option_nexttrace_info ;;
-      7) option_enable_bbr ;;
-      8) option_bbr_info ;;
+      0) return 0 ;;
+      *) warn "无效选项，请重新输入。" ;;
+    esac
+    pause
+  done
+}
+
+docker_npm_menu_loop() {
+  local choice=""
+  while true; do
+    clear 2>/dev/null || true
+    print_logo
+    say "${C_BOLD}${C_CYAN}Docker + Nginx Proxy Manager${C_RESET}"
+    say "--------------------------------------------------"
+    say "1. 安装 Docker + Nginx Proxy Manager"
+    say "2. 查看 Docker + Nginx Proxy Manager 说明"
+    say "0. 返回上一级"
+    say "--------------------------------------------------"
+    prompt_read -p "请输入你的选择: " choice
+    printf '\n'
+    case "${choice}" in
+      1) option_run_npm_docker ;;
+      2) option_npm_docker_info ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac
@@ -1462,13 +1474,14 @@ main_loop() {
     case "${choice}" in
       1) ssh_menu_loop ;;
       2) option_show_system_info; pause ;;
-      3) apps_menu_loop ;;
-      4) option_system_cleanup; pause ;;
-      5) docker_menu_loop ;;
-      6) firewall_menu_loop ;;
-      7) network_menu_loop ;;
-      8) system_tools_menu_loop ;;
-      9) option_update_toolbox ;;
+      3) vless_menu_loop ;;
+      4) docker_npm_menu_loop ;;
+      5) option_system_cleanup; pause ;;
+      6) docker_menu_loop ;;
+      7) firewall_menu_loop ;;
+      8) network_menu_loop ;;
+      9) system_tools_menu_loop ;;
+      10) option_update_toolbox ;;
       0) exit 0 ;;
       *) warn "无效选项，请重新输入。"; pause ;;
     esac

@@ -342,13 +342,14 @@ chmod +x ~/ssh-key-menu.sh
 
 - `1` SSH 登录管理
 - `2` 系统信息查询
-- `3` 应用市场
-- `4` 系统清理
-- `5` Docker 管理
-- `6` 常用端口放行
-- `7` 网络工具
-- `8` 系统工具
-- `9` 更新工具箱
+- `3` VLESS / XHTTP / REALITY
+- `4` Docker + Nginx Proxy Manager
+- `5` 系统清理
+- `6` Docker 管理
+- `7` 常用端口放行
+- `8` 网络工具
+- `9` 系统工具
+- `10` 更新工具箱
 - `0` 退出
 
 ### SSH 登录管理子菜单
@@ -363,16 +364,15 @@ chmod +x ~/ssh-key-menu.sh
 - `8` 关闭密码登录
 - `9` 开启密码登录
 
-### 应用市场
+### VLESS / XHTTP / REALITY
 
 - `1` 运行 `vless-xhttp-reality-self`
 - `2` 查看 `vless-xhttp-reality-self` 说明
-- `3` 安装 `Docker + Nginx Proxy Manager`
-- `4` 查看 `Docker + Nginx Proxy Manager` 说明
-- `5` 安装 `NextTrace`
-- `6` 查看 `NextTrace` 说明
-- `7` 启用 `BBR`
-- `8` 查看 `BBR` 状态
+
+### Docker + Nginx Proxy Manager
+
+- `1` 安装 `Docker + Nginx Proxy Manager`
+- `2` 查看 `Docker + Nginx Proxy Manager` 说明
 
 ### Docker 管理
 
