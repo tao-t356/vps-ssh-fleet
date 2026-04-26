@@ -65,6 +65,29 @@ get_os_pretty_name() {
   fi
 }
 
+print_divider() {
+  say "------------------------------------------------------------"
+}
+
+print_section_title() {
+  local title="$1"
+  printf '%s%s%s\n' "${C_BOLD}" "${title}" "${C_RESET}"
+}
+
+menu_item() {
+  local key="$1"
+  local label="$2"
+  printf '  %-3s %s\n' "${key}." "${label}"
+}
+
+menu_back_item() {
+  printf '  %-3s %s\n' "0." "返回上一级"
+}
+
+menu_exit_item() {
+  printf '  %-3s %s\n' "0." "退出"
+}
+
 print_logo() {
   local primary_ip=""
   local kernel=""
@@ -224,18 +247,22 @@ pubkey_status_text() {
 print_ssh_menu() {
   clear 2>/dev/null || true
   print_logo
-  say "${C_BOLD}${C_CYAN}SSH 登录管理菜单${C_RESET}"
-  say "当前用户: ${CURRENT_USER}"
-  say "密码登录模式: $(password_status_text)"
-  say "公钥登录模式: $(pubkey_status_text)"
-  say "authorized_keys 条数: $(count_authorized_keys)"
-  say "--------------------------------------------------"
-  say "1. 生成本机密钥对            2. 手动输入一行公钥"
-  say "3. GitHub 导入已有公钥       4. URL 导入已有公钥"
-  say "5. 编辑公钥文件              6. 查看本机密钥"
-  say "7. 查看 authorized_keys      8. 关闭密码登录"
-  say "9. 开启密码登录              0. 退出"
-  say "--------------------------------------------------"
+  print_section_title "SSH 登录管理"
+  say "  密码登录 : $(password_status_text)"
+  say "  公钥登录 : $(pubkey_status_text)"
+  say "  公钥条数 : $(count_authorized_keys)"
+  print_divider
+  menu_item "1" "生成本机密钥对"
+  menu_item "2" "手动输入一行公钥"
+  menu_item "3" "GitHub 导入已有公钥"
+  menu_item "4" "URL 导入已有公钥"
+  menu_item "5" "编辑公钥文件"
+  menu_item "6" "查看本机密钥"
+  menu_item "7" "查看 authorized_keys"
+  menu_item "8" "关闭密码登录"
+  menu_item "9" "开启密码登录"
+  menu_back_item
+  print_divider
 }
 
 append_keys_text() {
@@ -1256,20 +1283,20 @@ dd_reinstall_menu_loop() {
   while true; do
     clear 2>/dev/null || true
     print_logo
-    say "${C_BOLD}${C_RED}DD 重装系统（危险）${C_RESET}"
-    say "--------------------------------------------------"
+    print_section_title "DD 重装系统（危险）"
+    print_divider
     say "警告："
     say "- 会覆盖当前系统"
     say "- 会中断当前 SSH 会话"
     say "- 可能自动重启"
     say "- 当前数据可能不可恢复"
-    say "--------------------------------------------------"
-    say "1. Debian 12"
-    say "2. Debian 13"
-    say "3. Ubuntu 22.04"
-    say "4. Ubuntu 24.04"
-    say "0. 返回上一级"
-    say "--------------------------------------------------"
+    print_divider
+    menu_item "1" "Debian 12"
+    menu_item "2" "Debian 13"
+    menu_item "3" "Ubuntu 22.04"
+    menu_item "4" "Ubuntu 24.04"
+    menu_back_item
+    print_divider
     prompt_read -p "请输入你的选择 [2]: " choice
     printf '\n'
     case "${choice:-2}" in
@@ -1394,19 +1421,19 @@ option_enable_password_login() {
 print_toolbox_menu() {
   clear 2>/dev/null || true
   print_logo
-  say "${C_BOLD}${C_CYAN}${APP_NAME} v${TOOLBOX_VERSION}${C_RESET}"
-  say "当前用户: ${CURRENT_USER}    主机: $(hostname)"
-  say "密码登录模式: $(password_status_text)    公钥条数: $(count_authorized_keys)"
-  say "--------------------------------------------------"
-  say "1. SSH 登录管理"
-  say "2. VLESS 协议 + Hysteria2 协议 节点搭建"
-  say "3. Docker + Nginx Proxy Manager"
-  say "4. Docker 管理"
-  say "5. 网络工具"
-  say "6. 系统工具"
-  say "7. 更新工具箱"
-  say "0. 退出"
-  say "--------------------------------------------------"
+  print_section_title "主菜单"
+  say "  密码登录 : $(password_status_text)"
+  say "  公钥条数 : $(count_authorized_keys)"
+  print_divider
+  menu_item "1" "SSH 登录管理"
+  menu_item "2" "VLESS 协议 + Hysteria2 协议 节点搭建"
+  menu_item "3" "Docker + Nginx Proxy Manager"
+  menu_item "4" "Docker 管理"
+  menu_item "5" "网络工具"
+  menu_item "6" "系统工具"
+  menu_item "7" "更新工具箱"
+  menu_exit_item
+  print_divider
 }
 
 docker_menu_loop() {
@@ -1414,17 +1441,17 @@ docker_menu_loop() {
   while true; do
     clear 2>/dev/null || true
     print_logo
-    say "${C_BOLD}${C_CYAN}Docker 管理${C_RESET}"
-    say "--------------------------------------------------"
-    say "1. 查看 Docker 状态"
-    say "2. 查看全部容器"
-    say "3. 启动全部容器"
-    say "4. 停止全部容器"
-    say "5. 重启全部容器"
-    say "6. 查看容器日志"
-    say "7. Docker system prune"
-    say "0. 返回上一级"
-    say "--------------------------------------------------"
+    print_section_title "Docker 管理"
+    print_divider
+    menu_item "1" "查看 Docker 状态"
+    menu_item "2" "查看全部容器"
+    menu_item "3" "启动全部容器"
+    menu_item "4" "停止全部容器"
+    menu_item "5" "重启全部容器"
+    menu_item "6" "查看容器日志"
+    menu_item "7" "Docker system prune"
+    menu_back_item
+    print_divider
     prompt_read -p "请输入你的选择: " choice
     printf '\n'
     case "${choice}" in
@@ -1447,16 +1474,16 @@ firewall_menu_loop() {
   while true; do
     clear 2>/dev/null || true
     print_logo
-    say "${C_BOLD}${C_CYAN}常用端口放行${C_RESET}"
-    say "--------------------------------------------------"
-    say "1. 放行 SSH (22/tcp)"
-    say "2. 放行 HTTP (80/tcp)"
-    say "3. 放行 HTTPS (443/tcp)"
-    say "4. 一次放行 22/80/443"
-    say "5. 放行自定义端口"
-    say "6. 查看防火墙状态"
-    say "0. 返回上一级"
-    say "--------------------------------------------------"
+    print_section_title "常用端口放行"
+    print_divider
+    menu_item "1" "放行 SSH (22/tcp)"
+    menu_item "2" "放行 HTTP (80/tcp)"
+    menu_item "3" "放行 HTTPS (443/tcp)"
+    menu_item "4" "一次放行 22/80/443"
+    menu_item "5" "放行自定义端口"
+    menu_item "6" "查看防火墙状态"
+    menu_back_item
+    print_divider
     prompt_read -p "请输入你的选择: " choice
     printf '\n'
     case "${choice}" in
@@ -1478,29 +1505,29 @@ network_menu_loop() {
   while true; do
     clear 2>/dev/null || true
     print_logo
-    say "${C_BOLD}${C_CYAN}网络工具${C_RESET}"
-    say "--------------------------------------------------"
-    say "1. 安装 XanMod 内核"
-    say "2. 查看 XanMod / BBRv3 状态"
-    say "3. 安装 NextTrace"
-    say "5. 普通内核启用 BBR"
-    say "6. 普通内核查看 BBR 状态"
-    say "7. Ping 测试"
-    say "8. Traceroute / Tracepath"
-    say "9. 查看本机路由"
-    say "0. 返回上一级"
-    say "--------------------------------------------------"
+    print_section_title "网络工具"
+    print_divider
+    menu_item "1" "安装 XanMod 内核"
+    menu_item "2" "查看 XanMod / BBRv3 状态"
+    menu_item "3" "安装 NextTrace"
+    menu_item "4" "普通内核启用 BBR"
+    menu_item "5" "普通内核查看 BBR 状态"
+    menu_item "6" "Ping 测试"
+    menu_item "7" "Traceroute / Tracepath"
+    menu_item "8" "查看本机路由"
+    menu_back_item
+    print_divider
     prompt_read -p "请输入你的选择: " choice
     printf '\n'
     case "${choice}" in
       1) option_install_xanmod ;;
       2) option_xanmod_info ;;
       3) option_run_nexttrace ;;
-      5) option_enable_bbr ;;
-      6) option_bbr_info ;;
-      7) option_ping_test ;;
-      8) option_trace_test ;;
-      9) option_show_ip_route ;;
+      4) option_enable_bbr ;;
+      5) option_bbr_info ;;
+      6) option_ping_test ;;
+      7) option_trace_test ;;
+      8) option_show_ip_route ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac
@@ -1513,17 +1540,17 @@ system_tools_menu_loop() {
   while true; do
     clear 2>/dev/null || true
     print_logo
-    say "${C_BOLD}${C_CYAN}系统工具${C_RESET}"
-    say "--------------------------------------------------"
-    say "1. 查看监听端口"
-    say "2. 查看高占用进程"
-    say "3. 查看常见服务状态"
-    say "4. 重启 SSH 服务"
-    say "5. 查看最近登录"
-    say "6. 重启服务器"
-    say "7. DD 重装系统（危险）"
-    say "0. 返回上一级"
-    say "--------------------------------------------------"
+    print_section_title "系统工具"
+    print_divider
+    menu_item "1" "查看监听端口"
+    menu_item "2" "查看高占用进程"
+    menu_item "3" "查看常见服务状态"
+    menu_item "4" "重启 SSH 服务"
+    menu_item "5" "查看最近登录"
+    menu_item "6" "重启服务器"
+    menu_item "7" "DD 重装系统（危险）"
+    menu_back_item
+    print_divider
     prompt_read -p "请输入你的选择: " choice
     printf '\n'
     case "${choice}" in
