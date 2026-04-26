@@ -341,15 +341,12 @@ chmod +x ~/ssh-key-menu.sh
 ### 当前工具箱主菜单
 
 - `1` SSH 登录管理
-- `2` 系统信息查询
-- `3` VLESS 协议 + Hysteria2 协议 节点搭建
-- `4` Docker + Nginx Proxy Manager
-- `5` 系统清理
-- `6` Docker 管理
-- `7` 常用端口放行
-- `8` 网络工具
-- `9` 系统工具
-- `10` 更新工具箱
+- `2` VLESS 协议 + Hysteria2 协议 节点搭建
+- `3` Docker + Nginx Proxy Manager
+- `4` Docker 管理
+- `5` 网络工具
+- `6` 系统工具
+- `7` 更新工具箱
 - `0` 退出
 
 ### SSH 登录管理子菜单
@@ -366,8 +363,8 @@ chmod +x ~/ssh-key-menu.sh
 
 其中：
 
-- 选择 `3` 会**直接运行** `vless-xhttp-reality-self`
-- 选择 `4` 会**直接运行** `Docker + Nginx Proxy Manager`
+- 选择 `2` 会**直接运行** `vless-xhttp-reality-self`
+- 选择 `3` 会**直接运行** `Docker + Nginx Proxy Manager`
 
 ### Docker 管理
 
@@ -378,15 +375,6 @@ chmod +x ~/ssh-key-menu.sh
 - `5` 重启全部容器
 - `6` 查看容器日志
 - `7` `docker system prune`
-
-### 常用端口放行
-
-- `1` 放行 `22/tcp`
-- `2` 放行 `80/tcp`
-- `3` 放行 `443/tcp`
-- `4` 一次放行 `22/80/443`
-- `5` 放行自定义端口
-- `6` 查看防火墙状态
 
 ### 网络工具
 

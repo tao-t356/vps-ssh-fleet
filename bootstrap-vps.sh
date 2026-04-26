@@ -1367,15 +1367,12 @@ print_toolbox_menu() {
   say "密码登录模式: $(password_status_text)    公钥条数: $(count_authorized_keys)"
   say "--------------------------------------------------"
   say "1. SSH 登录管理"
-  say "2. 系统信息查询"
-  say "3. VLESS 协议 + Hysteria2 协议 节点搭建"
-  say "4. Docker + Nginx Proxy Manager"
-  say "5. 系统清理"
-  say "6. Docker 管理"
-  say "7. 常用端口放行"
-  say "8. 网络工具"
-  say "9. 系统工具"
-  say "10. 更新工具箱"
+  say "2. VLESS 协议 + Hysteria2 协议 节点搭建"
+  say "3. Docker + Nginx Proxy Manager"
+  say "4. Docker 管理"
+  say "5. 网络工具"
+  say "6. 系统工具"
+  say "7. 更新工具箱"
   say "0. 退出"
   say "--------------------------------------------------"
 }
@@ -1541,15 +1538,12 @@ main_loop() {
     printf '\n'
     case "${choice}" in
       1) ssh_menu_loop ;;
-      2) option_show_system_info; pause ;;
-      3) option_run_vless_project; pause ;;
-      4) option_run_npm_docker; pause ;;
-      5) option_system_cleanup; pause ;;
-      6) docker_menu_loop ;;
-      7) firewall_menu_loop ;;
-      8) network_menu_loop ;;
-      9) system_tools_menu_loop ;;
-      10) option_update_toolbox ;;
+      2) option_run_vless_project; pause ;;
+      3) option_run_npm_docker; pause ;;
+      4) docker_menu_loop ;;
+      5) network_menu_loop ;;
+      6) system_tools_menu_loop ;;
+      7) option_update_toolbox ;;
       0) exit 0 ;;
       *) warn "无效选项，请重新输入。"; pause ;;
     esac
