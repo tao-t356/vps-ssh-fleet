@@ -386,6 +386,8 @@ chmod +x ~/ssh-key-menu.sh
 - `7` `traceroute / tracepath`
 - `8` 查看本机路由
 
+> 安装 `XanMod` 完成后，工具箱会提示你是否立即重启，以切换到新内核。
+
 ### 系统工具
 
 - `1` 查看监听端口

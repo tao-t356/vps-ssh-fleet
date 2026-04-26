@@ -847,7 +847,16 @@ EOF
   rm -f "${tmp_script}"
 
   ok "XanMod 安装命令已执行完成。"
-  warn "请确认安装日志无报错，然后重启系统切换到新内核。"
+  warn "请确认安装日志无报错。切换到 XanMod 新内核需要重启系统。"
+  prompt_read -p "是否现在重启系统以切换到新内核？(回车默认重启) [Y/n]: " reboot_now
+  case "${reboot_now}" in
+    n|N)
+      warn "已跳过重启。你可以稍后在“系统工具 -> 重启服务器”里手动重启。"
+      ;;
+    *)
+      option_reboot_server
+      ;;
+  esac
 }
 
 option_bbr_info() {
