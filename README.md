@@ -340,11 +340,11 @@ chmod +x ~/ssh-key-menu.sh
 ### 当前工具箱主菜单
 
 - `1` SSH 登录管理
-- `2` VLESS 协议 + Hysteria2 协议 节点搭建
-- `3` Docker + Nginx Proxy Manager
-- `4` Docker 管理
-- `5` 网络工具
-- `6` 系统工具
+- `2` VLESS + Hysteria2 节点搭建
+- `3` Docker + Nginx Proxy Manager 安装
+- `4` Docker 容器管理
+- `5` 网络工具 / BBR
+- `6` 系统工具 / DD
 - `7` 更新工具箱
 - `0` 退出
 

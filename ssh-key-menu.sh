@@ -139,26 +139,26 @@ print_logo() {
   border="$(repeat_char "═" 62)"
   title_line="${APP_NAME}  ·  VPS 管理工具箱  ·  v${TOOLBOX_VERSION}"
 
-  say "${C_BOLD}${C_CYAN}╔${border}╗${C_RESET}"
-  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET} ${C_BOLD}$(printf '%-60.60s' "${title_line}")${C_RESET} ${C_BOLD}${C_CYAN}║${C_RESET}"
-  say "${C_BOLD}${C_CYAN}╠${border}╣${C_RESET}"
+  say "${C_CYAN}╔${border}╗${C_RESET}"
+  printf '%s\n' "${C_CYAN}║${C_RESET} ${C_BOLD}$(printf '%-60.60s' "${title_line}")${C_RESET} ${C_CYAN}║${C_RESET}"
+  say "${C_CYAN}╠${border}╣${C_RESET}"
 
   line="Host   : $(hostname)    User   : ${CURRENT_USER}"
-  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_CYAN}║${C_RESET}"
 
   line="IP     : ${primary_ip:-unknown}    Kernel : ${kernel}"
-  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_CYAN}║${C_RESET}"
 
   line="OS     : ${os_name}"
-  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_CYAN}║${C_RESET}"
 
   line="Uptime : ${uptime_text}"
-  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_CYAN}║${C_RESET}"
 
-  line="Runtime: docker=${docker_state}   kernel=${kernel_state}   tcp=${bbr_state}"
-  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+  line="Status : docker=${docker_state}   kernel=${kernel_state}   tcp=${bbr_state}"
+  printf '%s\n' "${C_CYAN}║${C_RESET} $(printf '%-60.60s' "${line}") ${C_CYAN}║${C_RESET}"
 
-  say "${C_BOLD}${C_CYAN}╚${border}╝${C_RESET}"
+  say "${C_CYAN}╚${border}╝${C_RESET}"
 }
 
 run_docker() {
@@ -1464,11 +1464,11 @@ print_toolbox_menu() {
   say "  公钥条数 : $(count_authorized_keys)"
   print_divider
   menu_item "1" "SSH 登录管理"
-  menu_item "2" "VLESS 协议 + Hysteria2 协议 节点搭建"
-  menu_item "3" "Docker + Nginx Proxy Manager"
-  menu_item "4" "Docker 管理"
-  menu_item "5" "网络工具"
-  menu_item "6" "系统工具"
+  menu_item "2" "VLESS + Hysteria2 节点搭建"
+  menu_item "3" "Docker + Nginx Proxy Manager 安装"
+  menu_item "4" "Docker 容器管理"
+  menu_item "5" "网络工具 / BBR"
+  menu_item "6" "系统工具 / DD"
   menu_item "7" "更新工具箱"
   menu_exit_item
   print_divider
