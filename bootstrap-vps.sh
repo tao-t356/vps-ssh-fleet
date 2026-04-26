@@ -117,7 +117,7 @@ write_menu_script() {
 set -euo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
-TOOLBOX_VERSION="0.6.0"
+TOOLBOX_VERSION="0.7.0"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
 SSH_DIR="${CURRENT_HOME}/.ssh"
@@ -578,6 +578,91 @@ option_run_nexttrace() {
     "它会在线安装 NextTrace。"
 }
 
+option_bbr_info() {
+  local cc="unknown"
+  local qdisc="unknown"
+  local available="unknown"
+
+  if have_cmd sysctl; then
+    cc="$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || printf 'unknown')"
+    qdisc="$(sysctl -n net.core.default_qdisc 2>/dev/null || printf 'unknown')"
+    available="$(sysctl -n net.ipv4.tcp_available_congestion_control 2>/dev/null || printf 'unknown')"
+  fi
+
+  say "${C_BOLD}${C_CYAN}BBR 状态${C_RESET}"
+  say "--------------------------------------------------"
+  say "当前拥塞控制算法: ${cc}"
+  say "当前默认队列算法: ${qdisc}"
+  say "内核支持的拥塞控制: ${available}"
+  if printf '%s' "${available}" | grep -qw bbr; then
+    say "BBR 支持状态: 支持"
+  else
+    say "BBR 支持状态: 可能不支持"
+  fi
+  if [ "${cc}" = "bbr" ]; then
+    say "BBR 启用状态: 已启用"
+  else
+    say "BBR 启用状态: 未启用"
+  fi
+  say "--------------------------------------------------"
+}
+
+option_enable_bbr() {
+  local root_cmd=""
+  local tmp_script=""
+
+  if ! root_cmd="$(sudo_prefix)"; then
+    err "需要 root 或 sudo 权限才能启用 BBR。"
+    return 1
+  fi
+
+  say "即将启用 BBR。"
+  say "会写入:"
+  say "- /etc/modules-load.d/bbr.conf"
+  say "- /etc/sysctl.d/99-vps-toolbox-bbr.conf"
+  prompt_read -p "确认继续？[y/N]: " confirm
+  case "${confirm}" in
+    y|Y) ;;
+    *)
+      warn "已取消。"
+      return 0
+      ;;
+  esac
+
+  tmp_script="$(mktemp)"
+  cat > "${tmp_script}" <<'EOF'
+set -e
+
+mkdir -p /etc/modules-load.d /etc/sysctl.d
+
+cat > /etc/modules-load.d/bbr.conf <<'CONF'
+tcp_bbr
+sch_fq
+CONF
+
+cat > /etc/sysctl.d/99-vps-toolbox-bbr.conf <<'CONF'
+net.core.default_qdisc=fq
+net.ipv4.tcp_congestion_control=bbr
+CONF
+
+modprobe sch_fq 2>/dev/null || true
+modprobe tcp_bbr 2>/dev/null || true
+
+if command -v sysctl >/dev/null 2>&1; then
+  sysctl --system >/dev/null
+fi
+EOF
+
+  if [ -n "${root_cmd}" ]; then
+    ${root_cmd} bash "${tmp_script}"
+  else
+    bash "${tmp_script}"
+  fi
+  rm -f "${tmp_script}"
+
+  option_bbr_info
+}
+
 apply_password_mode() {
   local password_auth="$1"
   local kbd_auth="$2"
@@ -710,6 +795,8 @@ apps_menu_loop() {
     say "4. 查看 Docker + Nginx Proxy Manager 说明"
     say "5. 安装 NextTrace"
     say "6. 查看 NextTrace 说明"
+    say "7. 启用 BBR"
+    say "8. 查看 BBR 状态"
     say "0. 返回上一级"
     say "--------------------------------------------------"
     prompt_read -p "请输入你的选择: " choice
@@ -721,6 +808,8 @@ apps_menu_loop() {
       4) option_npm_docker_info ;;
       5) option_run_nexttrace ;;
       6) option_nexttrace_info ;;
+      7) option_enable_bbr ;;
+      8) option_bbr_info ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac

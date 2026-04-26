@@ -365,6 +365,8 @@ chmod +x ~/ssh-key-menu.sh
 - `4` 查看 `Docker + Nginx Proxy Manager` 说明
 - `5` 安装 `NextTrace`
 - `6` 查看 `NextTrace` 说明
+- `7` 启用 `BBR`
+- `8` 查看 `BBR` 状态
 
 > 如果你在当前这个本地环境里用 GitHub / URL 导入，脚本会让你输入 `jshook`。
 
