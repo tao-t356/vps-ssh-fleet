@@ -4,7 +4,9 @@ set -euo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
-TOOLBOX_VERSION="0.10.0"
+APP_NAME="TaoBox"
+REPO_SLUG="tao-t356/TaoBox"
+TOOLBOX_VERSION="0.11.0"
 DEFAULT_JSHOOK="123"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
@@ -40,12 +42,12 @@ get_effective_jshook() {
 }
 
 print_logo() {
-  say "${C_BOLD}${C_CYAN} __     ______   _____   _______             _ _                ${C_RESET}"
-  say "${C_BOLD}${C_CYAN} \\ \\   / /  _ \\ / ____| |__   __|           | | |               ${C_RESET}"
-  say "${C_BOLD}${C_CYAN}  \\ \\_/ /| |_) | (___      | | ___   ___ ___| | |__   _____  __  ${C_RESET}"
-  say "${C_BOLD}${C_CYAN}   \\   / |  _ < \\___ \\     | |/ _ \\ / _ / __| | '_ \\ / _ \\ \\/ /  ${C_RESET}"
-  say "${C_BOLD}${C_CYAN}    | |  | |_) |____) |    | | (_) | (_) (__| | |_) | (_) >  <   ${C_RESET}"
-  say "${C_BOLD}${C_CYAN}    |_|  |____/|_____/     |_|\\___/ \\___\\___|_|_.__/ \\___/_/\\_\\  ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}  _______             ____             ${C_RESET}"
+  say "${C_BOLD}${C_CYAN} |__   __|           |  _ \\            ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}    | | __ _  ___    | |_) | _____  __ ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}    | |/ _\` |/ _ \\   |  _ < / _ \\ \\/ / ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}    | | (_| | (_) |  | |_) | (_) >  <  ${C_RESET}"
+  say "${C_BOLD}${C_CYAN}    |_|\\__,_|\\___/   |____/ \\___/_/\\_\\ ${C_RESET}"
   say "${C_BOLD}${C_CYAN}                         v${TOOLBOX_VERSION}${C_RESET}"
 }
 
@@ -943,9 +945,9 @@ option_update_toolbox() {
 
   tmp_script="$(mktemp)"
   if have_cmd curl; then
-    curl -fsSL -H "jshook: ${jshook}" "https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh" -o "${tmp_script}"
+    curl -fsSL -H "jshook: ${jshook}" "https://raw.githubusercontent.com/${REPO_SLUG}/main/bootstrap-vps.sh" -o "${tmp_script}"
   elif have_cmd wget; then
-    wget -qO "${tmp_script}" --header="jshook: ${jshook}" "https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh"
+    wget -qO "${tmp_script}" --header="jshook: ${jshook}" "https://raw.githubusercontent.com/${REPO_SLUG}/main/bootstrap-vps.sh"
   else
     err "需要 curl 或 wget 其中一个命令。"
     rm -f "${tmp_script}"
@@ -1149,10 +1151,10 @@ option_reboot_server() {
 option_dd_reinstall_system() {
   local root_cmd=""
   local jshook=""
-  local distro=""
-  local version=""
+  local os_choice=""
+  local distro="debian"
+  local version="13"
   local root_pass=""
-  local root_pass_confirm=""
   local tmp_file=""
   local dd_url="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh"
   local distro_flag=""
@@ -1169,27 +1171,40 @@ option_dd_reinstall_system() {
   say "- 可能自动重启"
   say "- 导致当前数据不可恢复"
   say "脚本来源: ${dd_url}"
-  prompt_read -p "若确认继续，请输入 YES: " confirm
-  if [ "${confirm}" != "YES" ]; then
-    warn "已取消。"
-    return 0
-  fi
+  say "请选择系统："
+  say "1. Debian 12"
+  say "2. Debian 13"
+  say "3. Ubuntu 22.04"
+  say "4. Ubuntu 24.04"
+  prompt_read -p "请输入你的选择 [2]: " os_choice
+  case "${os_choice:-2}" in
+    1)
+      distro="debian"
+      version="12"
+      ;;
+    2)
+      distro="debian"
+      version="13"
+      ;;
+    3)
+      distro="ubuntu"
+      version="22.04"
+      ;;
+    4)
+      distro="ubuntu"
+      version="24.04"
+      ;;
+    *)
+      warn "无效选项，已取消。"
+      return 0
+      ;;
+  esac
 
-  prompt_read -p "系统类型 [debian]: " distro
-  distro="${distro:-debian}"
-  prompt_read -p "系统版本 [13]: " version
-  version="${version:-13}"
   prompt_secret -p "新系统 root 密码: " root_pass
-  printf '\n'
-  prompt_secret -p "再次输入 root 密码: " root_pass_confirm
   printf '\n'
   if [ -z "${root_pass}" ]; then
     warn "密码不能为空。"
     return 0
-  fi
-  if [ "${root_pass}" != "${root_pass_confirm}" ]; then
-    err "两次输入的密码不一致。"
-    return 1
   fi
 
   jshook="$(get_effective_jshook)"
@@ -1216,7 +1231,7 @@ option_dd_reinstall_system() {
   fi
 
   chmod +x "${tmp_file}"
-  warn "即将开始 DD 重装，当前会话可能很快断开。"
+  warn "即将开始 DD 重装到 ${distro} ${version}，当前会话可能很快断开。"
   if [ -n "${root_cmd}" ]; then
     run_with_tty ${root_cmd} bash "${tmp_file}" "${distro_flag}" "${version}" -pwd "${root_pass}"
   else
@@ -1334,7 +1349,7 @@ option_enable_password_login() {
 print_toolbox_menu() {
   clear 2>/dev/null || true
   print_logo
-  say "${C_BOLD}${C_CYAN}VPS 工具箱 v${TOOLBOX_VERSION}${C_RESET}"
+  say "${C_BOLD}${C_CYAN}${APP_NAME} v${TOOLBOX_VERSION}${C_RESET}"
   say "当前用户: ${CURRENT_USER}    主机: $(hostname)"
   say "密码登录模式: $(password_status_text)    公钥条数: $(count_authorized_keys)"
   say "--------------------------------------------------"

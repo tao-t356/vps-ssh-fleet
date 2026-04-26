@@ -1,4 +1,4 @@
-# vps-ssh-fleet
+# TaoBox
 
 用**一套你自己生成的 SSH 密钥**统一管理多台 VPS 的 GitHub 项目模板。
 
@@ -124,13 +124,13 @@ curl.exe -H "jshook: 123" https://github.com/你的GitHub用户名.keys
 登录后执行：
 
 ```bash
-curl -fsSL -H "jshook: <YOUR_JSHOOK>" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash
+curl -fsSL -H "jshook: <YOUR_JSHOOK>" https://raw.githubusercontent.com/tao-t356/TaoBox/main/bootstrap-vps.sh | bash
 ```
 
 如果你当前环境里的 `jshook` 是 `123`，可直接用：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/TaoBox/main/bootstrap-vps.sh | bash
 ```
 
 这一步会自动：
@@ -151,7 +151,7 @@ f
 
 ---
 
-### 第 5 步：在 VPS 工具箱里从 GitHub 导入公钥
+### 第 5 步：在 TaoBox 里从 GitHub 导入公钥
 
 菜单打开后，输入：
 
@@ -320,14 +320,14 @@ C:\Users\你的Windows用户名\.ssh\id_ed25519.pub
 
 那就用这个单文件脚本：
 
-`D:\vs\vps-ssh-fleet\ssh-key-menu.sh`
+`D:\vs\TaoBox\ssh-key-menu.sh`
 
 ### 用法
 
 先把脚本传到 VPS：
 
 ```powershell
-scp D:\vs\vps-ssh-fleet\ssh-key-menu.sh root@你的VPSIP:/root/
+scp D:\vs\TaoBox\ssh-key-menu.sh root@你的VPSIP:/root/
 ```
 
 然后登录 VPS 执行：
@@ -405,7 +405,7 @@ chmod +x ~/ssh-key-menu.sh
 如果你已经登录进 VPS，想让 VPS **自己从 GitHub 拉脚本并立刻运行**，直接执行：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/TaoBox/main/bootstrap-vps.sh | bash
 ```
 
 它会：
@@ -414,7 +414,7 @@ curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-f
 2. 保存到 `~/ssh-key-menu.sh`
 3. 自动加执行权限
 4. 默认安装一个快捷命令 `f`
-5. 立即打开 VPS 工具箱
+5. 立即打开 TaoBox
 
 以后你在 VPS 里直接输入：
 
@@ -427,13 +427,13 @@ f
 如果你只想下载，不想立刻运行：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash -s -- --no-run
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/TaoBox/main/bootstrap-vps.sh | bash -s -- --no-run
 ```
 
 如果你想换成别的快捷命令，比如 `menu`：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/vps-ssh-fleet/main/bootstrap-vps.sh | bash -s -- --shortcut menu
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/TaoBox/main/bootstrap-vps.sh | bash -s -- --shortcut menu
 ```
 
 ---
@@ -539,7 +539,7 @@ ssh -F .\generated\ssh_config hk-1
 ## 目录结构
 
 ```text
-vps-ssh-fleet/
+TaoBox/
 ├─ .gitignore
 ├─ quick-start.ps1
 ├─ ansible.cfg
