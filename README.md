@@ -342,7 +342,7 @@ chmod +x ~/ssh-key-menu.sh
 
 - `1` SSH 登录管理
 - `2` 系统信息查询
-- `3` VLESS / XHTTP / REALITY
+- `3` VLESS 协议 + Hysteria2 协议 节点搭建
 - `4` Docker + Nginx Proxy Manager
 - `5` 系统清理
 - `6` Docker 管理
@@ -364,15 +364,10 @@ chmod +x ~/ssh-key-menu.sh
 - `8` 关闭密码登录
 - `9` 开启密码登录
 
-### VLESS / XHTTP / REALITY
+其中：
 
-- `1` 运行 `vless-xhttp-reality-self`
-- `2` 查看 `vless-xhttp-reality-self` 说明
-
-### Docker + Nginx Proxy Manager
-
-- `1` 安装 `Docker + Nginx Proxy Manager`
-- `2` 查看 `Docker + Nginx Proxy Manager` 说明
+- 选择 `3` 会**直接运行** `vless-xhttp-reality-self`
+- 选择 `4` 会**直接运行** `Docker + Nginx Proxy Manager`
 
 ### Docker 管理
 

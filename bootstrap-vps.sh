@@ -1368,7 +1368,7 @@ print_toolbox_menu() {
   say "--------------------------------------------------"
   say "1. SSH 登录管理"
   say "2. 系统信息查询"
-  say "3. VLESS / XHTTP / REALITY"
+  say "3. VLESS 协议 + Hysteria2 协议 节点搭建"
   say "4. Docker + Nginx Proxy Manager"
   say "5. 系统清理"
   say "6. Docker 管理"
@@ -1378,52 +1378,6 @@ print_toolbox_menu() {
   say "10. 更新工具箱"
   say "0. 退出"
   say "--------------------------------------------------"
-}
-
-vless_menu_loop() {
-  local choice=""
-  while true; do
-    clear 2>/dev/null || true
-    print_logo
-    say "${C_BOLD}${C_CYAN}VLESS / XHTTP / REALITY${C_RESET}"
-    say "--------------------------------------------------"
-    say "1. 运行 vless-xhttp-reality-self"
-    say "2. 查看 vless-xhttp-reality-self 说明"
-    say "0. 返回上一级"
-    say "--------------------------------------------------"
-    prompt_read -p "请输入你的选择: " choice
-    printf '\n'
-    case "${choice}" in
-      1) option_run_vless_project ;;
-      2) option_vless_project_info ;;
-      0) return 0 ;;
-      *) warn "无效选项，请重新输入。" ;;
-    esac
-    pause
-  done
-}
-
-docker_npm_menu_loop() {
-  local choice=""
-  while true; do
-    clear 2>/dev/null || true
-    print_logo
-    say "${C_BOLD}${C_CYAN}Docker + Nginx Proxy Manager${C_RESET}"
-    say "--------------------------------------------------"
-    say "1. 安装 Docker + Nginx Proxy Manager"
-    say "2. 查看 Docker + Nginx Proxy Manager 说明"
-    say "0. 返回上一级"
-    say "--------------------------------------------------"
-    prompt_read -p "请输入你的选择: " choice
-    printf '\n'
-    case "${choice}" in
-      1) option_run_npm_docker ;;
-      2) option_npm_docker_info ;;
-      0) return 0 ;;
-      *) warn "无效选项，请重新输入。" ;;
-    esac
-    pause
-  done
 }
 
 docker_menu_loop() {
@@ -1588,8 +1542,8 @@ main_loop() {
     case "${choice}" in
       1) ssh_menu_loop ;;
       2) option_show_system_info; pause ;;
-      3) vless_menu_loop ;;
-      4) docker_npm_menu_loop ;;
+      3) option_run_vless_project; pause ;;
+      4) option_run_npm_docker; pause ;;
       5) option_system_cleanup; pause ;;
       6) docker_menu_loop ;;
       7) firewall_menu_loop ;;
