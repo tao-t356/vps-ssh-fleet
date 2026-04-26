@@ -398,9 +398,8 @@ chmod +x ~/ssh-key-menu.sh
 - `1` 安装 `XanMod` 内核
 - `2` 查看 `XanMod / BBRv3` 状态
 - `3` 安装 `NextTrace`
-- `4` 查看 `NextTrace` 说明
-- `5` 启用 `BBR`
-- `6` 查看 `BBR` 状态
+- `5` 普通内核启用 `BBR`
+- `6` 普通内核查看 `BBR` 状态
 - `7` `ping` 测试
 - `8` `traceroute / tracepath`
 - `9` 查看本机路由

@@ -1374,9 +1374,8 @@ network_menu_loop() {
     say "1. 安装 XanMod 内核"
     say "2. 查看 XanMod / BBRv3 状态"
     say "3. 安装 NextTrace"
-    say "4. 查看 NextTrace 说明"
-    say "5. 启用 BBR"
-    say "6. 查看 BBR 状态"
+    say "5. 普通内核启用 BBR"
+    say "6. 普通内核查看 BBR 状态"
     say "7. Ping 测试"
     say "8. Traceroute / Tracepath"
     say "9. 查看本机路由"
@@ -1388,7 +1387,6 @@ network_menu_loop() {
       1) option_install_xanmod ;;
       2) option_xanmod_info ;;
       3) option_run_nexttrace ;;
-      4) option_nexttrace_info ;;
       5) option_enable_bbr ;;
       6) option_bbr_info ;;
       7) option_ping_test ;;
