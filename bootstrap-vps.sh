@@ -117,7 +117,7 @@ write_menu_script() {
 set -euo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
-TOOLBOX_VERSION="0.5.0"
+TOOLBOX_VERSION="0.6.0"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
 SSH_DIR="${CURRENT_HOME}/.ssh"
@@ -485,29 +485,21 @@ option_vless_project_info() {
   say "--------------------------------------------------"
 }
 
-option_run_vless_project() {
-  local project_url="https://raw.githubusercontent.com/tao-t356/vless-xhttp-reality-self/main/scripts/install.sh"
+run_remote_installer() {
+  local project_name="$1"
+  local project_url="$2"
+  local note="${3:-}"
   local jshook=""
   local tmp_file=""
 
   if [ "$(id -u)" -ne 0 ]; then
-    err "这个项目建议使用 root 运行。"
+    err "${project_name} 建议使用 root 运行。"
     return 1
   fi
 
-  if [ -r /etc/os-release ]; then
-    . /etc/os-release
-    case "${ID:-}" in
-      debian|ubuntu) ;;
-      *)
-        warn "当前系统不是 Debian / Ubuntu，脚本可能不兼容。"
-        ;;
-    esac
-  fi
-
-  say "即将运行: vless-xhttp-reality-self"
+  say "即将运行: ${project_name}"
   say "仓库地址: ${project_url}"
-  say "注意：它会修改 Xray / Nginx / 证书等配置。"
+  [ -n "${note}" ] && say "注意：${note}"
   prompt_read -p "确认继续？[y/N]: " confirm
   case "${confirm}" in
     y|Y) ;;
@@ -533,6 +525,57 @@ option_run_vless_project() {
   chmod +x "${tmp_file}"
   run_with_tty bash "${tmp_file}"
   rm -f "${tmp_file}"
+}
+
+option_run_vless_project() {
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    case "${ID:-}" in
+      debian|ubuntu) ;;
+      *)
+        warn "当前系统不是 Debian / Ubuntu，脚本可能不兼容。"
+        ;;
+    esac
+  fi
+
+  run_remote_installer \
+    "vless-xhttp-reality-self" \
+    "https://raw.githubusercontent.com/tao-t356/vless-xhttp-reality-self/main/scripts/install.sh" \
+    "它会修改 Xray / Nginx / 证书等配置。"
+}
+
+option_npm_docker_info() {
+  say "${C_BOLD}${C_CYAN}Docker + Nginx Proxy Manager${C_RESET}"
+  say "--------------------------------------------------"
+  say "仓库: https://github.com/tao-t356/Docker-Nginx-Proxy-Manager"
+  say "用途: 一键安装 Docker 与 Nginx Proxy Manager"
+  say "原始命令: wget -qO n https://raw.githubusercontent.com/tao-t356/Docker-Nginx-Proxy-Manager/main/install.sh && bash n"
+  say "当前工具箱会改成 jshook 兼容方式下载后执行。"
+  say "--------------------------------------------------"
+}
+
+option_run_npm_docker() {
+  run_remote_installer \
+    "Docker-Nginx-Proxy-Manager" \
+    "https://raw.githubusercontent.com/tao-t356/Docker-Nginx-Proxy-Manager/main/install.sh" \
+    "它会安装 Docker 与 Nginx Proxy Manager。"
+}
+
+option_nexttrace_info() {
+  say "${C_BOLD}${C_CYAN}NextTrace${C_RESET}"
+  say "--------------------------------------------------"
+  say "官网: https://nxtrace.org"
+  say "用途: 路由追踪 / 网络诊断"
+  say "原始命令: curl -sL https://nxtrace.org/nt | bash"
+  say "当前工具箱会改成 jshook 兼容方式下载后执行。"
+  say "--------------------------------------------------"
+}
+
+option_run_nexttrace() {
+  run_remote_installer \
+    "NextTrace" \
+    "https://nxtrace.org/nt" \
+    "它会在线安装 NextTrace。"
 }
 
 apply_password_mode() {
@@ -663,6 +706,10 @@ apps_menu_loop() {
     say "--------------------------------------------------"
     say "1. 运行 vless-xhttp-reality-self"
     say "2. 查看 vless-xhttp-reality-self 说明"
+    say "3. 安装 Docker + Nginx Proxy Manager"
+    say "4. 查看 Docker + Nginx Proxy Manager 说明"
+    say "5. 安装 NextTrace"
+    say "6. 查看 NextTrace 说明"
     say "0. 返回上一级"
     say "--------------------------------------------------"
     prompt_read -p "请输入你的选择: " choice
@@ -670,6 +717,10 @@ apps_menu_loop() {
     case "${choice}" in
       1) option_run_vless_project ;;
       2) option_vless_project_info ;;
+      3) option_run_npm_docker ;;
+      4) option_npm_docker_info ;;
+      5) option_run_nexttrace ;;
+      6) option_nexttrace_info ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac

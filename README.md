@@ -361,6 +361,10 @@ chmod +x ~/ssh-key-menu.sh
 
 - `1` 运行 `vless-xhttp-reality-self`
 - `2` 查看 `vless-xhttp-reality-self` 说明
+- `3` 安装 `Docker + Nginx Proxy Manager`
+- `4` 查看 `Docker + Nginx Proxy Manager` 说明
+- `5` 安装 `NextTrace`
+- `6` 查看 `NextTrace` 说明
 
 > 如果你在当前这个本地环境里用 GitHub / URL 导入，脚本会让你输入 `jshook`。
 
