@@ -41,14 +41,57 @@ get_effective_jshook() {
   printf '%s' "${JSHOOK:-${DEFAULT_JSHOOK}}"
 }
 
+repeat_char() {
+  local char="$1"
+  local count="$2"
+  local out=""
+  while [ "${count}" -gt 0 ]; do
+    out="${out}${char}"
+    count=$((count - 1))
+  done
+  printf '%s' "${out}"
+}
+
+get_primary_ip() {
+  hostname -I 2>/dev/null | awk '{print $1}'
+}
+
+get_os_pretty_name() {
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    printf '%s' "${PRETTY_NAME:-Linux}"
+  else
+    uname -s
+  fi
+}
+
 print_logo() {
-  say "${C_BOLD}${C_CYAN}  _______             ____             ${C_RESET}"
-  say "${C_BOLD}${C_CYAN} |__   __|           |  _ \\            ${C_RESET}"
-  say "${C_BOLD}${C_CYAN}    | | __ _  ___    | |_) | _____  __ ${C_RESET}"
-  say "${C_BOLD}${C_CYAN}    | |/ _\` |/ _ \\   |  _ < / _ \\ \\/ / ${C_RESET}"
-  say "${C_BOLD}${C_CYAN}    | | (_| | (_) |  | |_) | (_) >  <  ${C_RESET}"
-  say "${C_BOLD}${C_CYAN}    |_|\\__,_|\\___/   |____/ \\___/_/\\_\\ ${C_RESET}"
-  say "${C_BOLD}${C_CYAN}                         v${TOOLBOX_VERSION}${C_RESET}"
+  local primary_ip=""
+  local kernel=""
+  local os_name=""
+  local uptime_text=""
+  local border=""
+
+  primary_ip="$(get_primary_ip)"
+  kernel="$(uname -r 2>/dev/null || printf 'unknown')"
+  os_name="$(get_os_pretty_name)"
+  uptime_text="$(uptime -p 2>/dev/null || uptime 2>/dev/null || printf 'unknown')"
+  border="$(repeat_char "═" 60)"
+
+  say "${C_BOLD}${C_CYAN}╔${border}╗${C_RESET}"
+  say "${C_BOLD}${C_CYAN}║${C_RESET}                                                            ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}   _______             ____               ${C_BOLD}${C_YELLOW}TaoBox${C_RESET}        ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}  |__   __|           |  _ \\              ${C_BOLD}${C_CYAN}v${TOOLBOX_VERSION}${C_RESET}           ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}     | | __ _  ___    | |_) | _____  __                    ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}     | |/ _\` |/ _ \\   |  _ < / _ \\ \\/ /                    ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}     | | (_| | (_) |  | |_) | (_) >  <                     ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}     |_|\\__,_|\\___/   |____/ \\___/_/\\_\\                    ${C_BOLD}${C_CYAN}║${C_RESET}"
+  say "${C_BOLD}${C_CYAN}║${C_RESET}                                                            ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}  ${C_BOLD}Host${C_RESET}: $(printf '%-17s' "$(hostname)") ${C_BOLD}User${C_RESET}: $(printf '%-16s' "${CURRENT_USER}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}  ${C_BOLD}IP${C_RESET}:   $(printf '%-17s' "${primary_ip:-unknown}") ${C_BOLD}Kernel${C_RESET}: $(printf '%-14s' "${kernel}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}  ${C_BOLD}OS${C_RESET}:   $(printf '%-47.47s' "${os_name}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+  printf '%s\n' "${C_BOLD}${C_CYAN}║${C_RESET}  ${C_BOLD}Up${C_RESET}:   $(printf '%-47.47s' "${uptime_text}") ${C_BOLD}${C_CYAN}║${C_RESET}"
+  say "${C_BOLD}${C_CYAN}╚${border}╝${C_RESET}"
 }
 
 run_docker() {
