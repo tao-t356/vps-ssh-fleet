@@ -622,9 +622,9 @@ run_remote_installer() {
   say "即将运行: ${project_name}"
   say "仓库地址: ${project_url}"
   [ -n "${note}" ] && say "注意：${note}"
-  prompt_read -p "确认继续？[y/N]: " confirm
+  prompt_read -p "确认继续？[Y/n]: " confirm
   case "${confirm}" in
-    y|Y) ;;
+    ""|y|Y) ;;
     *)
       warn "已取消。"
       return 0
@@ -771,9 +771,9 @@ option_install_xanmod() {
   say "推荐安装包: ${package_name}"
   say "说明: XanMod 官方当前包含并默认启用 BBRv3（名称显示为 bbr）。"
   say "安装完成后通常需要重启服务器。"
-  prompt_read -p "确认继续？[y/N]: " confirm
+  prompt_read -p "确认继续？[Y/n]: " confirm
   case "${confirm}" in
-    y|Y) ;;
+    ""|y|Y) ;;
     *)
       warn "已取消。"
       return 0
@@ -1713,8 +1713,8 @@ main_loop() {
     printf '\n'
     case "${choice}" in
       1) ssh_menu_loop ;;
-      2) option_run_vless_project; pause ;;
-      3) option_run_npm_docker; pause ;;
+      2) option_run_vless_project ;;
+      3) option_run_npm_docker ;;
       4) docker_menu_loop ;;
       5) network_menu_loop ;;
       6) system_tools_menu_loop ;;
