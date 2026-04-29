@@ -251,7 +251,7 @@ print_logo() {
   kernel_state="$(get_xanmod_summary)"
   bbr_state="$(get_bbr_summary)"
   border="$(repeat_char "═" 62)"
-  title_line="${APP_NAME}  ·  VPS 管理工具箱  ·  v${TOOLBOX_VERSION}"
+  title_line="${APP_NAME} | VPS Toolbox | v${TOOLBOX_VERSION}"
 
   say "${C_CYAN}╔${border}╗${C_RESET}"
   printf '%s\n' "${C_CYAN}║${C_RESET} ${C_BOLD}$(printf '%-60.60s' "${title_line}")${C_RESET} ${C_CYAN}║${C_RESET}"
@@ -1722,27 +1722,21 @@ network_menu_loop() {
     print_logo
     print_section_title "网络工具"
     print_divider
-    menu_item "1" "安装 XanMod 内核"
-    menu_item "2" "查看 XanMod / BBRv3 状态"
-    menu_item "3" "安装 NextTrace"
-    menu_item "4" "普通内核启用 BBR"
-    menu_item "5" "普通内核查看 BBR 状态"
-    menu_item "6" "Ping 测试"
-    menu_item "7" "Traceroute / Tracepath"
-    menu_item "8" "查看本机路由"
+    menu_item "1" "普通内核启用 BBR"
+    menu_item "2" "普通内核查看 BBR 状态"
+    menu_item "3" "Ping 测试"
+    menu_item "4" "Traceroute / Tracepath"
+    menu_item "5" "查看本机路由"
     menu_back_item
     print_divider
     prompt_read -p "请输入你的选择: " choice
     printf '\n'
     case "${choice}" in
-      1) option_install_xanmod ;;
-      2) option_xanmod_info ;;
-      3) option_run_nexttrace ;;
-      4) option_enable_bbr ;;
-      5) option_bbr_info ;;
-      6) option_ping_test ;;
-      7) option_trace_test ;;
-      8) option_show_ip_route ;;
+      1) option_enable_bbr ;;
+      2) option_bbr_info ;;
+      3) option_ping_test ;;
+      4) option_trace_test ;;
+      5) option_show_ip_route ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac

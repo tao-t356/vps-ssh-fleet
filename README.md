@@ -408,16 +408,11 @@ curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/TaoBox/ma
 
 ### 网络工具
 
-- `1` 安装 `XanMod` 内核
-- `2` 查看 `XanMod / BBRv3` 状态
-- `3` 安装 `NextTrace`
-- `4` 普通内核启用 `BBR`
-- `5` 普通内核查看 `BBR` 状态
-- `6` `ping` 测试
-- `7` `traceroute / tracepath`
-- `8` 查看本机路由
-
-> 安装 `XanMod` 完成后，工具箱会提示你是否立即重启，以切换到新内核。
+- `1` 普通内核启用 `BBR`
+- `2` 普通内核查看 `BBR` 状态
+- `3` `ping` 测试
+- `4` `traceroute / tracepath`
+- `5` 查看本机路由
 
 ### 系统工具
 
