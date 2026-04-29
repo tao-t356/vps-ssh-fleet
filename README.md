@@ -410,9 +410,10 @@ curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/TaoBox/ma
 
 - `1` 普通内核启用 `BBR`
 - `2` 普通内核查看 `BBR` 状态
-- `3` `ping` 测试
-- `4` `traceroute / tracepath`
-- `5` 查看本机路由
+- `3` 安装 `NextTrace`
+- `4` `ping` 测试
+- `5` `traceroute / tracepath`
+- `6` 查看本机路由
 
 ### 系统工具
 

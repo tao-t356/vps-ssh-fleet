@@ -1610,9 +1610,10 @@ network_menu_loop() {
     print_divider
     menu_item "1" "普通内核启用 BBR"
     menu_item "2" "普通内核查看 BBR 状态"
-    menu_item "3" "Ping 测试"
-    menu_item "4" "Traceroute / Tracepath"
-    menu_item "5" "查看本机路由"
+    menu_item "3" "安装 NextTrace"
+    menu_item "4" "Ping 测试"
+    menu_item "5" "Traceroute / Tracepath"
+    menu_item "6" "查看本机路由"
     menu_back_item
     print_divider
     prompt_read -p "请输入你的选择: " choice
@@ -1620,9 +1621,10 @@ network_menu_loop() {
     case "${choice}" in
       1) option_enable_bbr ;;
       2) option_bbr_info ;;
-      3) option_ping_test ;;
-      4) option_trace_test ;;
-      5) option_show_ip_route ;;
+      3) option_run_nexttrace ;;
+      4) option_ping_test ;;
+      5) option_trace_test ;;
+      6) option_show_ip_route ;;
       0) return 0 ;;
       *) warn "无效选项，请重新输入。" ;;
     esac
