@@ -30,3 +30,6 @@ jobs:
 
       - name: Validate VPS bootstrap shell script
         run: bash -n ./bootstrap-vps.sh
+
+      - name: Validate TaoBox Speed shell script
+        run: bash -n ./scripts/taobox-speed.sh

@@ -340,7 +340,7 @@ chmod +x ~/ssh-key-menu.sh
 ### 当前工具箱主菜单
 
 - `1` SSH 登录管理
-- `2` VLESS + Hysteria2 节点搭建
+- `2` TaoBox Speed 节点加速
 - `3` Docker + Nginx Proxy Manager 安装
 - `4` Docker 容器管理
 - `5` 网络工具 / BBR
@@ -362,8 +362,30 @@ chmod +x ~/ssh-key-menu.sh
 
 其中：
 
-- 选择 `2` 会**直接运行** `vless-xhttp-reality-self`
+- 选择 `2` 会**直接运行** `scripts/taobox-speed.sh`
 - 选择 `3` 会**直接运行** `Docker + Nginx Proxy Manager`
+
+### TaoBox Speed（已内置到本仓库）
+
+`TaoBox Speed` 是从 `speed-slayer` 迁移并并入 `TaoBox` 的节点加速脚本，主要能力：
+
+- `XanMod / BBRv3` 内核安装与重启续跑
+- `TCP` 智能调优
+- `Argo + VMess WebSocket` 节点部署
+- `VMess / Base64 / Clash / Shadowrocket / Auto` 订阅输出
+- `doctor / repair / speedtest / netcheck / logs / update-self`
+
+进入 `2` 后脚本会安装快捷命令：
+
+```bash
+speed
+```
+
+也可以手动直接运行：
+
+```bash
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/TaoBox/main/scripts/taobox-speed.sh | bash -s -- --all
+```
 
 ### Docker 管理
 

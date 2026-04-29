@@ -120,7 +120,7 @@ SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
 APP_NAME="TaoBox"
 REPO_SLUG="tao-t356/TaoBox"
-TOOLBOX_VERSION="0.11.2"
+TOOLBOX_VERSION="0.12.0"
 DEFAULT_JSHOOK="123"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
@@ -636,12 +636,13 @@ option_show_system_info() {
 }
 
 option_vless_project_info() {
-  say "${C_BOLD}${C_CYAN}vless-xhttp-reality-self${C_RESET}"
+  say "${C_BOLD}${C_CYAN}TaoBox Speed${C_RESET}"
   say "--------------------------------------------------"
-  say "仓库: https://github.com/tao-t356/vless-xhttp-reality-self"
-  say "用途: Debian / Ubuntu 上菜单式部署 VLESS + XHTTP + REALITY + Hysteria2"
-  say "要求: root、域名已解析、80/443 可用"
-  say "运行方式: 会从 GitHub 拉取 scripts/install.sh 并执行"
+  say "仓库: https://github.com/tao-t356/TaoBox"
+  say "用途: TCP 智能调优 + XanMod / BBRv3 + Argo VMess WebSocket 节点部署"
+  say "要求: Debian / Ubuntu、root、Cloudflare / GitHub 出站正常"
+  say "运行方式: 会从 GitHub 拉取 TaoBox 内置 scripts/taobox-speed.sh 并执行"
+  say "功能: 完整流程、重启续跑、doctor、repair、speedtest、netcheck、订阅输出"
   say "--------------------------------------------------"
 }
 
@@ -699,9 +700,9 @@ option_run_vless_project() {
   fi
 
   run_remote_installer \
-    "vless-xhttp-reality-self" \
-    "https://raw.githubusercontent.com/tao-t356/vless-xhttp-reality-self/main/scripts/install.sh" \
-    "它会修改 Xray / Nginx / 证书等配置。"
+    "TaoBox Speed" \
+    "https://raw.githubusercontent.com/tao-t356/TaoBox/main/scripts/taobox-speed.sh" \
+    "它会修改内核 / sysctl / DNS / Xray / Nginx / Cloudflared / systemd 等配置。"
 }
 
 option_npm_docker_info() {
@@ -1587,7 +1588,7 @@ print_toolbox_menu() {
   say "  公钥条数 : $(count_authorized_keys)"
   print_divider
   menu_item "1" "SSH 登录管理"
-  menu_item "2" "VLESS + Hysteria2 节点搭建"
+  menu_item "2" "TaoBox Speed 节点加速"
   menu_item "3" "Docker + Nginx Proxy Manager 安装"
   menu_item "4" "Docker 容器管理"
   menu_item "5" "网络工具 / BBR"
