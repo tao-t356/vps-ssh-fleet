@@ -737,6 +737,24 @@ option_run_taobox_speed() {
     "--optimize-only"
 }
 
+option_run_taobox_speed_node() {
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    case "${ID:-}" in
+      debian|ubuntu) ;;
+      *)
+        warn "当前系统不是 Debian / Ubuntu，脚本可能不兼容。"
+        ;;
+    esac
+  fi
+
+  run_remote_installer \
+    "TaoBox Speed Node" \
+    "https://raw.githubusercontent.com/tao-t356/TaoBox/main/scripts/taobox-speed.sh" \
+    "它会部署 Argo + VMess WebSocket 节点并生成订阅链接。" \
+    "--install-argo-vmess"
+}
+
 option_run_vless_project() {
   if [ -r /etc/os-release ]; then
     . /etc/os-release
@@ -1638,12 +1656,13 @@ print_toolbox_menu() {
   print_divider
   menu_item "1" "SSH 登录管理"
   menu_item "2" "XanMod + BBRv3 + TCP 调优"
-  menu_item "3" "VLESS + Hysteria2 节点搭建"
-  menu_item "4" "Docker + Nginx Proxy Manager 安装"
-  menu_item "5" "Docker 容器管理"
-  menu_item "6" "网络工具 / BBR"
-  menu_item "7" "系统工具 / DD"
-  menu_item "8" "更新工具箱"
+  menu_item "3" "TaoBox Speed 节点部署"
+  menu_item "4" "VLESS + Hysteria2 节点搭建"
+  menu_item "5" "Docker + Nginx Proxy Manager 安装"
+  menu_item "6" "Docker 容器管理"
+  menu_item "7" "网络工具 / BBR"
+  menu_item "8" "系统工具 / DD"
+  menu_item "9" "更新工具箱"
   menu_exit_item
   print_divider
 }
@@ -1812,12 +1831,13 @@ main_loop() {
     case "${choice}" in
       1) ssh_menu_loop ;;
       2) option_run_taobox_speed ;;
-      3) option_run_vless_project ;;
-      4) option_run_npm_docker ;;
-      5) docker_menu_loop ;;
-      6) network_menu_loop ;;
-      7) system_tools_menu_loop ;;
-      8) option_update_toolbox ;;
+      3) option_run_taobox_speed_node ;;
+      4) option_run_vless_project ;;
+      5) option_run_npm_docker ;;
+      6) docker_menu_loop ;;
+      7) network_menu_loop ;;
+      8) system_tools_menu_loop ;;
+      9) option_update_toolbox ;;
       0) exit 0 ;;
       *) warn "无效选项，请重新输入。"; pause ;;
     esac
