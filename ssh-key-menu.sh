@@ -521,7 +521,7 @@ option_show_system_info() {
   fi
 }
 
-option_vless_project_info() {
+option_taobox_speed_info() {
   say "${C_BOLD}${C_CYAN}TaoBox Speed${C_RESET}"
   say "--------------------------------------------------"
   say "仓库: https://github.com/tao-t356/TaoBox"
@@ -529,6 +529,16 @@ option_vless_project_info() {
   say "要求: Debian / Ubuntu、root、Cloudflare / GitHub 出站正常"
   say "运行方式: 会从 GitHub 拉取 TaoBox 内置 scripts/taobox-speed.sh 并执行"
   say "功能: 完整流程、重启续跑、doctor、repair、speedtest、netcheck、订阅输出"
+  say "--------------------------------------------------"
+}
+
+option_vless_project_info() {
+  say "${C_BOLD}${C_CYAN}vless-xhttp-reality-self${C_RESET}"
+  say "--------------------------------------------------"
+  say "仓库: https://github.com/tao-t356/vless-xhttp-reality-self"
+  say "用途: Debian / Ubuntu 上菜单式部署 VLESS + XHTTP + REALITY + Hysteria2"
+  say "要求: root、域名已解析、80/443 可用"
+  say "运行方式: 会从 GitHub 拉取 scripts/install.sh 并执行"
   say "--------------------------------------------------"
 }
 
@@ -574,7 +584,7 @@ run_remote_installer() {
   rm -f "${tmp_file}"
 }
 
-option_run_vless_project() {
+option_run_taobox_speed() {
   if [ -r /etc/os-release ]; then
     . /etc/os-release
     case "${ID:-}" in
@@ -589,6 +599,23 @@ option_run_vless_project() {
     "TaoBox Speed" \
     "https://raw.githubusercontent.com/tao-t356/TaoBox/main/scripts/taobox-speed.sh" \
     "它会修改内核 / sysctl / DNS / Xray / Nginx / Cloudflared / systemd 等配置。"
+}
+
+option_run_vless_project() {
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    case "${ID:-}" in
+      debian|ubuntu) ;;
+      *)
+        warn "当前系统不是 Debian / Ubuntu，脚本可能不兼容。"
+        ;;
+    esac
+  fi
+
+  run_remote_installer \
+    "vless-xhttp-reality-self" \
+    "https://raw.githubusercontent.com/tao-t356/vless-xhttp-reality-self/main/scripts/install.sh" \
+    "它会修改 Xray / Nginx / 证书等配置。"
 }
 
 option_npm_docker_info() {
@@ -1475,11 +1502,12 @@ print_toolbox_menu() {
   print_divider
   menu_item "1" "SSH 登录管理"
   menu_item "2" "TaoBox Speed 节点加速"
-  menu_item "3" "Docker + Nginx Proxy Manager 安装"
-  menu_item "4" "Docker 容器管理"
-  menu_item "5" "网络工具 / BBR"
-  menu_item "6" "系统工具 / DD"
-  menu_item "7" "更新工具箱"
+  menu_item "3" "VLESS + Hysteria2 节点搭建"
+  menu_item "4" "Docker + Nginx Proxy Manager 安装"
+  menu_item "5" "Docker 容器管理"
+  menu_item "6" "网络工具 / BBR"
+  menu_item "7" "系统工具 / DD"
+  menu_item "8" "更新工具箱"
   menu_exit_item
   print_divider
 }
@@ -1647,12 +1675,13 @@ main_loop() {
     printf '\n'
     case "${choice}" in
       1) ssh_menu_loop ;;
-      2) option_run_vless_project ;;
-      3) option_run_npm_docker ;;
-      4) docker_menu_loop ;;
-      5) network_menu_loop ;;
-      6) system_tools_menu_loop ;;
-      7) option_update_toolbox ;;
+      2) option_run_taobox_speed ;;
+      3) option_run_vless_project ;;
+      4) option_run_npm_docker ;;
+      5) docker_menu_loop ;;
+      6) network_menu_loop ;;
+      7) system_tools_menu_loop ;;
+      8) option_update_toolbox ;;
       0) exit 0 ;;
       *) warn "无效选项，请重新输入。"; pause ;;
     esac
