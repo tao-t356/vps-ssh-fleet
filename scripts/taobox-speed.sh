@@ -202,6 +202,10 @@ clear_state() {
   cdn_recommendation
 }
 
+clear_state_silent() {
+  rm -f "$STATE_FILE" 2>/dev/null || true
+}
+
 is_xanmod_kernel() {
   uname -r | grep -qi xanmod
 }
@@ -314,18 +318,38 @@ detect_x64_level() {
   echo "$level"
 }
 
+xanmod_available_packages() {
+  apt-cache search '^linux-xanmod' 2>/dev/null | awk '{print $1}' | sort -u
+}
+
 xanmod_pkg_available() {
   local pkg="$1"
-  apt-cache policy "$pkg" 2>/dev/null | awk '/Candidate:/ {print $2; exit}' | grep -vqE '^(\(none\)|)$'
+  xanmod_available_packages | grep -qx "${pkg}"
 }
 
 select_xanmod_pkg() {
-  local level="$1" n pkg candidates=()
+  local level="$1" n pkg
+  local candidates=()
+
   for n in "$level" 3 2 1; do
     [ "$n" -gt "$level" ] 2>/dev/null && continue
+    [ "$n" -eq 1 ] && continue
     candidates+=("linux-xanmod-x64v${n}")
   done
+
+  for n in "$level" 3 2 1; do
+    [ "$n" -gt "$level" ] 2>/dev/null && continue
+    candidates+=("linux-xanmod-lts-x64v${n}")
+  done
+
+  for n in "$level" 3 2 1; do
+    [ "$n" -gt "$level" ] 2>/dev/null && continue
+    [ "$n" -eq 1 ] && continue
+    candidates+=("linux-xanmod-edge-x64v${n}")
+  done
+
   candidates+=("linux-xanmod")
+
   for pkg in "${candidates[@]}"; do
     if xanmod_pkg_available "$pkg"; then
       echo "$pkg"
@@ -336,7 +360,7 @@ select_xanmod_pkg() {
 }
 
 show_xanmod_candidates() {
-  apt-cache search '^linux-xanmod' 2>/dev/null | awk '{print "  - "$1}' | sort -u | head -30 || true
+  xanmod_available_packages | awk '{print "  - "$1}' | head -30 || true
 }
 
 native_install_xanmod_kernel() {
@@ -858,6 +882,7 @@ run_tcp_optimize() {
       confirm_reboot_now
       return 0
     fi
+    clear_state_silent
     err "内核组件安装失败，日志：$WORK_DIR/kernel-install.log"
     return 1
   fi
