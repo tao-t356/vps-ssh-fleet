@@ -340,7 +340,7 @@ chmod +x ~/ssh-key-menu.sh
 ### 当前工具箱主菜单
 
 - `1` SSH 登录管理
-- `2` TaoBox Speed 节点加速
+- `2` XanMod+BBRv3+TCP调优
 - `3` VLESS + Hysteria2 节点搭建
 - `4` Docker + Nginx Proxy Manager 安装
 - `5` Docker 容器管理

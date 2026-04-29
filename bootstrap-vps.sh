@@ -1615,7 +1615,7 @@ print_toolbox_menu() {
   say "  公钥条数 : $(count_authorized_keys)"
   print_divider
   menu_item "1" "SSH 登录管理"
-  menu_item "2" "TaoBox Speed 节点加速"
+  menu_item "2" "XanMod+BBRv3+TCP调优"
   menu_item "3" "VLESS + Hysteria2 节点搭建"
   menu_item "4" "Docker + Nginx Proxy Manager 安装"
   menu_item "5" "Docker 容器管理"
