@@ -549,6 +549,7 @@ run_remote_installer() {
   local script_arg="${4:-}"
   local jshook=""
   local tmp_file=""
+  local download_url=""
 
   if [ "$(id -u)" -ne 0 ]; then
     err "${project_name} 建议使用 root 运行。"
@@ -568,12 +569,27 @@ run_remote_installer() {
   esac
 
   jshook="$(get_effective_jshook)"
+  download_url="${project_url}"
+
+  case "${project_url}" in
+    https://raw.githubusercontent.com/tao-t356/TaoBox/main/scripts/taobox-speed.sh)
+      download_url="https://api.github.com/repos/tao-t356/TaoBox/contents/scripts/taobox-speed.sh?ref=main&ts=$(date +%s)"
+      ;;
+  esac
 
   tmp_file="$(mktemp)"
   if have_cmd curl; then
-    curl -fsSL -H "jshook: ${jshook}" "${project_url}" -o "${tmp_file}"
+    if printf '%s' "${download_url}" | grep -q '^https://api.github.com/repos/'; then
+      curl -fsSL -H "Accept: application/vnd.github.raw" -H "Cache-Control: no-cache" -H "jshook: ${jshook}" "${download_url}" -o "${tmp_file}"
+    else
+      curl -fsSL -H "Cache-Control: no-cache" -H "jshook: ${jshook}" "${download_url}" -o "${tmp_file}"
+    fi
   elif have_cmd wget; then
-    wget -qO "${tmp_file}" --header="jshook: ${jshook}" "${project_url}"
+    if printf '%s' "${download_url}" | grep -q '^https://api.github.com/repos/'; then
+      wget -qO "${tmp_file}" --header="Accept: application/vnd.github.raw" --header="Cache-Control: no-cache" --header="jshook: ${jshook}" "${download_url}"
+    else
+      wget -qO "${tmp_file}" --header="Cache-Control: no-cache" --header="jshook: ${jshook}" "${download_url}"
+    fi
   else
     err "需要 curl 或 wget 其中一个命令。"
     rm -f "${tmp_file}"
