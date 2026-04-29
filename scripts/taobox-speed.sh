@@ -44,26 +44,11 @@ err() { printf "%b◆ ERR %b %s\n" "$C_RED" "$C_RESET" "$*" >&2; }
 line() { printf "%b%s%b\n" "$C_MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "$C_RESET"; }
 section() { echo ""; line; printf "%b%s%b\n" "$C_BOLD$C_CYAN" " $1" "$C_RESET"; line; }
 
-banner() {
-  printf "%b" "$C_BOLD$C_MAGENTA"
-  cat <<'EOF'
-███████╗██████╗ ███████╗███████╗██████╗     ███████╗██╗      █████╗ ██╗   ██╗███████╗██████╗ 
-██╔════╝██╔══██╗██╔════╝██╔════╝██╔══██╗    ██╔════╝██║     ██╔══██╗╚██╗ ██╔╝██╔════╝██╔══██╗
-███████╗██████╔╝█████╗  █████╗  ██║  ██║    ███████╗██║     ███████║ ╚████╔╝ █████╗  ██████╔╝
-╚════██║██╔═══╝ ██╔══╝  ██╔══╝  ██║  ██║    ╚════██║██║     ██╔══██║  ╚██╔╝  ██╔══╝  ██╔══██╗
-███████║██║     ███████╗███████╗██████╔╝    ███████║███████╗██║  ██║   ██║   ███████╗██║  ██║
-╚══════╝╚═╝     ╚══════╝╚══════╝╚═════╝     ╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
-EOF
-  printf "%b" "$C_RESET"
-}
-
 intro() {
   echo ""
-  printf " %b%s%b\n" "$C_BOLD$C_CYAN" "VPS 网络加速 · Argo 隧道 · VMess WebSocket" "$C_RESET"
-  printf " %b%s%b\n" "$C_WHITE" "斩断延迟，撕开隧道，释放节点。" "$C_RESET"
-  echo ""
+  printf " %bTaoBox Speed%b  %bVersion:%b %s  %bProject:%b TaoBox\n" "$C_BOLD$C_CYAN" "$C_RESET" "$C_CYAN" "$C_RESET" "$SPEED_SLAYER_VERSION" "$C_CYAN" "$C_RESET"
+  printf " %bGitHub:%b %s\n" "$C_CYAN" "$C_RESET" "$PROJECT_URL"
   printf " %b入口：%b输入 %bspeed%b 进入控制台；重启后输入 %bspeed%b 自动续跑。\n" "$C_YELLOW" "$C_RESET" "$C_BOLD$C_GREEN" "$C_RESET" "$C_BOLD$C_GREEN" "$C_RESET"
-  printf " %bGitHub:%b %s  %bVersion:%b %s  %bProject:%b TaoBox\n" "$C_CYAN" "$C_RESET" "$PROJECT_URL" "$C_CYAN" "$C_RESET" "$SPEED_SLAYER_VERSION" "$C_CYAN" "$C_RESET"
   echo ""
 }
 
@@ -72,7 +57,6 @@ render_header_once() {
     return 0
   fi
   SPEED_HEADER_RENDERED=1
-  banner
   intro
 }
 
