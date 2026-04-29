@@ -711,12 +711,16 @@ run_remote_installer() {
   fi
 
   chmod +x "${tmp_file}"
+  local rc=0
   if [ -n "${script_arg}" ]; then
-    run_with_tty bash "${tmp_file}" "${script_arg}"
+    run_with_tty bash "${tmp_file}" "${script_arg}" || rc=$?
   else
-    run_with_tty bash "${tmp_file}"
+    run_with_tty bash "${tmp_file}" || rc=$?
   fi
   rm -f "${tmp_file}"
+  printf '\n'
+  prompt_read -p "按回车返回工具箱..." _
+  return "${rc}"
 }
 
 option_run_taobox_speed() {

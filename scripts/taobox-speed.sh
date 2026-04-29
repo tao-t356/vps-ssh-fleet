@@ -1402,6 +1402,15 @@ port_state() {
   fi
 }
 
+port_owner() {
+  local port="$1"
+  if command -v ss >/dev/null 2>&1; then
+    ss -lntp 2>/dev/null | awk -v p="$port" '$4 ~ ("(:|\\])" p "$") {print $0; exit}'
+  else
+    echo "unknown"
+  fi
+}
+
 health_check() {
   require_root
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
