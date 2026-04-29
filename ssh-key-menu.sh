@@ -546,6 +546,7 @@ run_remote_installer() {
   local project_name="$1"
   local project_url="$2"
   local note="${3:-}"
+  local script_arg="${4:-}"
   local jshook=""
   local tmp_file=""
 
@@ -580,7 +581,11 @@ run_remote_installer() {
   fi
 
   chmod +x "${tmp_file}"
-  run_with_tty bash "${tmp_file}"
+  if [ -n "${script_arg}" ]; then
+    run_with_tty bash "${tmp_file}" "${script_arg}"
+  else
+    run_with_tty bash "${tmp_file}"
+  fi
   rm -f "${tmp_file}"
 }
 
@@ -598,7 +603,8 @@ option_run_taobox_speed() {
   run_remote_installer \
     "TaoBox Speed" \
     "https://raw.githubusercontent.com/tao-t356/TaoBox/main/scripts/taobox-speed.sh" \
-    "它会修改内核 / sysctl / DNS / Xray / Nginx / Cloudflared / systemd 等配置。"
+    "它只执行 XanMod / BBRv3 / TCP 调优，不部署节点。" \
+    "--optimize-only"
 }
 
 option_run_vless_project() {
@@ -1501,7 +1507,7 @@ print_toolbox_menu() {
   say "  公钥条数 : $(count_authorized_keys)"
   print_divider
   menu_item "1" "SSH 登录管理"
-  menu_item "2" "XanMod+BBRv3+TCP调优"
+  menu_item "2" "XanMod + BBRv3 + TCP 调优"
   menu_item "3" "VLESS + Hysteria2 节点搭建"
   menu_item "4" "Docker + Nginx Proxy Manager 安装"
   menu_item "5" "Docker 容器管理"

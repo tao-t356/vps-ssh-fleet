@@ -340,7 +340,7 @@ chmod +x ~/ssh-key-menu.sh
 ### 当前工具箱主菜单
 
 - `1` SSH 登录管理
-- `2` XanMod+BBRv3+TCP调优
+- `2` XanMod + BBRv3 + TCP 调优
 - `3` VLESS + Hysteria2 节点搭建
 - `4` Docker + Nginx Proxy Manager 安装
 - `5` Docker 容器管理
@@ -363,7 +363,7 @@ chmod +x ~/ssh-key-menu.sh
 
 其中：
 
-- 选择 `2` 会**直接运行** `scripts/taobox-speed.sh`
+- 选择 `2` 会**直接运行** `scripts/taobox-speed.sh --optimize-only`
 - 选择 `3` 会**直接运行** `vless-xhttp-reality-self`
 - 选择 `4` 会**直接运行** `Docker + Nginx Proxy Manager`
 
@@ -386,7 +386,7 @@ speed
 也可以手动直接运行：
 
 ```bash
-curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/TaoBox/main/scripts/taobox-speed.sh | bash -s -- --all
+curl -fsSL -H "jshook: 123" https://raw.githubusercontent.com/tao-t356/TaoBox/main/scripts/taobox-speed.sh | bash -s -- --optimize-only
 ```
 
 ### TaoBox Speed 和原 VLESS + HY2 的区别

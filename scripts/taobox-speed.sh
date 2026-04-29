@@ -172,12 +172,13 @@ install_shortcut() {
 }
 
 save_pending_state() {
+  local next_action="${1:-continue}"
   require_root
   mkdir -p "$WORK_DIR"
   cat > "$STATE_FILE" <<EOF
 PENDING_CONTINUE=1
 CREATED_AT=$(date -Is 2>/dev/null || date)
-NEXT_ACTION=continue
+NEXT_ACTION=${next_action}
 EOF
   chmod 600 "$STATE_FILE"
 }
@@ -850,7 +851,7 @@ run_tcp_optimize() {
   install_shortcut || true
 
   if ! is_xanmod_kernel; then
-    save_pending_state
+    save_pending_state "${SPEED_NEXT_ACTION:-continue}"
     section "安装 XanMod + BBR v3 内核"
     warn "当前不是 XanMod 内核。此阶段保留核心输出，避免隐藏安装失败或重启提示。"
     if run_tcp_backend_visible; then
@@ -877,6 +878,10 @@ run_tcp_optimize() {
   fi
   progress_step 100 "TCP 调优完成"
   tcp_status_panel || true
+}
+
+run_tcp_optimize_only() {
+  SPEED_NEXT_ACTION=tcp_only run_tcp_optimize
 }
 
 gen_uuid() {
@@ -1242,11 +1247,23 @@ continue_after_reboot() {
   render_header_once
   require_root
   install_shortcut || true
+  local next_action="continue"
+  if [ -s "$STATE_FILE" ]; then
+    # shellcheck disable=SC1090
+    . "$STATE_FILE"
+    next_action="${NEXT_ACTION:-continue}"
+  fi
   if ! is_xanmod_kernel; then
-    err "当前仍未进入 XanMod 内核，暂停继续安装 Argo，避免循环。"
+    err "当前仍未进入 XanMod 内核，暂停续跑，避免循环。"
     echo "当前内核: $(uname -r)"
     echo "建议检查 VPS 是否支持自定义内核、GRUB 启动项或重新执行 speed --optimize。"
     exit 1
+  fi
+  if [ "$next_action" = "tcp_only" ]; then
+    info "检测到 XanMod 内核，继续执行纯 TCP 网络调优。"
+    run_tcp_optimize
+    clear_state || true
+    return 0
   fi
   info "检测到 XanMod 内核，继续执行 TCP 网络调优 + Argo VMess+WS"
   run_tcp_optimize
@@ -1616,6 +1633,7 @@ Usage:
 Commands:
   --tcp-status           查看 TCP / BBR / 内核状态
   --optimize             执行全自动 TCP 优化：BBR v3 + 网络调优
+  --optimize-only        仅执行 XanMod / BBRv3 / TCP 调优，不部署节点
   --install-argo-vmess   安装/重装 Argo VMess + WS，并生成节点/订阅 URL
   --all                  显示交互主页（安全默认，不直接修改系统）
   --force-all            无人值守完整流程；如需重启，重启后执行 speed 即可继续
@@ -1782,6 +1800,7 @@ default_action() {
 case "${1:-}" in
   --tcp-status) tcp_status_panel ;;
   --optimize) run_tcp_optimize ;;
+  --optimize-only) run_tcp_optimize_only ;;
   --install-argo-vmess) install_argo_vmess_ws ;;
   --all) run_all ;;
   --force-all) force_all ;;
