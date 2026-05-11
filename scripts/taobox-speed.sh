@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPO_SLUG="tao-t356/TaoBox"
 REPO_RAW_BASE="https://raw.githubusercontent.com/${REPO_SLUG}/main"
-SPEED_SLAYER_VERSION="v1.0.0-taobox.3"
+SPEED_SLAYER_VERSION="v1.0.0-taobox.4"
 PROJECT_URL="https://github.com/${REPO_SLUG}"
 DEFAULT_JSHOOK="123"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || echo .)"
@@ -883,27 +883,34 @@ run_tcp_optimize() {
   install_shortcut || true
 
   if ! is_xanmod_kernel; then
-    save_pending_state "${SPEED_NEXT_ACTION:-continue}"
-    section "安装 XanMod + BBR v3 内核"
-    warn "当前不是 XanMod 内核。此阶段保留核心输出，避免隐藏安装失败或重启提示。"
-    local kernel_install_code=0
-    set +e
-    run_tcp_backend_visible
-    kernel_install_code=$?
-    set -e
-    if [ "$kernel_install_code" -eq 0 ]; then
-      confirm_reboot_now
-      return 0
-    fi
-    if [ "$kernel_install_code" -eq 3 ] && [ "${SPEED_ALLOW_STOCK_FALLBACK:-1}" = "1" ]; then
+    if [ "${SPEED_FORCE_STOCK_FALLBACK:-0}" = "1" ]; then
       clear_state_silent
       SPEED_STOCK_FALLBACK_ACTIVE=1
-      warn "XanMod APT 源不可用，已启用降级路径：使用当前系统内核加载 tcp_bbr 并继续 TCP 调优。"
+      warn "已按续跑/降级策略跳过 XanMod 安装，使用当前系统内核加载 tcp_bbr 并继续 TCP 调优。"
       warn "此模式不是 XanMod/BBRv3；但可避免一键流程中断，后续节点部署会继续执行。"
     else
-      clear_state_silent
-      err "内核组件安装失败，日志：$WORK_DIR/kernel-install.log"
-      return 1
+      save_pending_state "${SPEED_NEXT_ACTION:-continue}"
+      section "安装 XanMod + BBR v3 内核"
+      warn "当前不是 XanMod 内核。此阶段保留核心输出，避免隐藏安装失败或重启提示。"
+      local kernel_install_code=0
+      set +e
+      run_tcp_backend_visible
+      kernel_install_code=$?
+      set -e
+      if [ "$kernel_install_code" -eq 0 ]; then
+        confirm_reboot_now
+        return 0
+      fi
+      if [ "$kernel_install_code" -eq 3 ] && [ "${SPEED_ALLOW_STOCK_FALLBACK:-1}" = "1" ]; then
+        clear_state_silent
+        SPEED_STOCK_FALLBACK_ACTIVE=1
+        warn "XanMod APT 源不可用，已启用降级路径：使用当前系统内核加载 tcp_bbr 并继续 TCP 调优。"
+        warn "此模式不是 XanMod/BBRv3；但可避免一键流程中断，后续节点部署会继续执行。"
+      else
+        clear_state_silent
+        err "内核组件安装失败，日志：$WORK_DIR/kernel-install.log"
+        return 1
+      fi
     fi
   fi
 
@@ -1303,10 +1310,27 @@ continue_after_reboot() {
     next_action="${NEXT_ACTION:-continue}"
   fi
   if ! is_xanmod_kernel; then
-    err "当前仍未进入 XanMod 内核，暂停续跑，避免循环。"
-    echo "当前内核: $(uname -r)"
-    echo "建议检查 VPS 是否支持自定义内核、GRUB 启动项或重新执行 speed --optimize。"
-    exit 1
+    if [ "${SPEED_ALLOW_STOCK_FALLBACK:-1}" = "1" ]; then
+      warn "检测到续跑状态，但当前仍未进入 XanMod 内核。"
+      warn "将清理旧续跑状态，并按 stock-kernel fallback 继续，避免卡在重启循环。"
+      clear_state_silent
+      ASSUME_Y=1
+      SPEED_FORCE_STOCK_FALLBACK=1
+      if [ "$next_action" = "tcp_only" ]; then
+        run_tcp_optimize
+        clear_state || true
+        return 0
+      fi
+      run_tcp_optimize
+      install_argo_vmess_ws
+      clear_state || true
+      return 0
+    else
+      err "当前仍未进入 XanMod 内核，暂停续跑，避免循环。"
+      echo "当前内核: $(uname -r)"
+      echo "建议检查 VPS 是否支持自定义内核、GRUB 启动项或重新执行 speed --optimize。"
+      exit 1
+    fi
   fi
   if [ "$next_action" = "tcp_only" ]; then
     info "检测到 XanMod 内核，继续执行纯 TCP 网络调优。"
