@@ -6,7 +6,7 @@ SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
 APP_NAME="TaoBox"
 REPO_SLUG="tao-t356/TaoBox"
-TOOLBOX_VERSION="0.12.2"
+TOOLBOX_VERSION="0.12.3"
 DEFAULT_JSHOOK="123"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
@@ -1522,13 +1522,48 @@ print_toolbox_menu() {
   menu_item "1" "SSH 登录管理"
   menu_item "2" "TaoBox Speed（一体）"
   menu_item "3" "VLESS + Hysteria2 节点搭建"
-  menu_item "4" "Docker + Nginx Proxy Manager 安装"
+  menu_item "4" "Docker + NPM 安装 / 容器管理"
   menu_item "5" "Docker 容器管理"
   menu_item "6" "网络工具 / BBR"
   menu_item "7" "系统工具 / DD"
   menu_item "8" "更新工具箱"
   menu_exit_item
   print_divider
+}
+
+docker_npm_menu_loop() {
+  local choice=""
+  while true; do
+    clear 2>/dev/null || true
+    print_logo
+    print_section_title "Docker + Nginx Proxy Manager"
+    print_divider
+    menu_item "1" "安装 / 重装 Docker + Nginx Proxy Manager"
+    menu_item "2" "查看 Docker 状态"
+    menu_item "3" "查看全部容器"
+    menu_item "4" "启动全部容器"
+    menu_item "5" "停止全部容器"
+    menu_item "6" "重启全部容器"
+    menu_item "7" "查看容器日志"
+    menu_item "8" "Docker system prune"
+    menu_back_item
+    print_divider
+    prompt_read -p "请输入你的选择: " choice
+    printf '\n'
+    case "${choice}" in
+      1) option_run_npm_docker ;;
+      2) option_docker_status ;;
+      3) option_docker_list_all ;;
+      4) option_docker_start_all ;;
+      5) option_docker_stop_all ;;
+      6) option_docker_restart_all ;;
+      7) option_docker_logs ;;
+      8) option_docker_prune ;;
+      0) return 0 ;;
+      *) warn "无效选项，请重新输入。" ;;
+    esac
+    pause
+  done
 }
 
 docker_menu_loop() {
@@ -1692,7 +1727,7 @@ main_loop() {
       1) ssh_menu_loop ;;
       2) option_run_taobox_speed ;;
       3) option_run_vless_project ;;
-      4) option_run_npm_docker ;;
+      4) docker_npm_menu_loop ;;
       5) docker_menu_loop ;;
       6) network_menu_loop ;;
       7) system_tools_menu_loop ;;
