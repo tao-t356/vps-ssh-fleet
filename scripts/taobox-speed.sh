@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPO_SLUG="tao-t356/TaoBox"
 REPO_RAW_BASE="https://raw.githubusercontent.com/${REPO_SLUG}/main"
-SPEED_SLAYER_VERSION="v1.0.0-taobox.1"
+SPEED_SLAYER_VERSION="v1.0.0-taobox.2"
 PROJECT_URL="https://github.com/${REPO_SLUG}"
 DEFAULT_JSHOOK="123"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || echo .)"
@@ -311,6 +311,24 @@ xanmod_pkg_available() {
   xanmod_available_packages | grep -qx "${pkg}"
 }
 
+download_xanmod_gpg_key() {
+  local key_tmp="$1"
+  local jshook
+  jshook="$(get_effective_jshook)"
+
+  # 官方 dl.xanmod.org 近期可能触发 Cloudflare challenge，先按官方地址尝试，
+  # 失败后自动切换到已知 GitHub raw 镜像，避免整个一键流程卡死在 GPG key。
+  if wget -qO "$key_tmp" --header="jshook: ${jshook}" "https://dl.xanmod.org/archive.key"; then
+    [ -s "$key_tmp" ] && return 0
+  fi
+
+  warn "XanMod 官方 GPG key 下载失败，尝试 GitHub 镜像源。"
+  wget -qO "$key_tmp" \
+    --header="jshook: ${jshook}" \
+    "https://raw.githubusercontent.com/kejilion/sh/main/archive.key"
+  [ -s "$key_tmp" ]
+}
+
 select_xanmod_pkg() {
   local level="$1" n pkg
   local candidates=()
@@ -372,7 +390,7 @@ native_install_xanmod_kernel() {
   local keyring="/usr/share/keyrings/xanmod-archive-keyring.gpg"
   local key_tmp
   key_tmp="$(mktemp)"
-  if ! wget -qO "$key_tmp" "https://dl.xanmod.org/archive.key" >>"$WORK_DIR/kernel-install.log" 2>&1; then
+  if ! download_xanmod_gpg_key "$key_tmp" >>"$WORK_DIR/kernel-install.log" 2>&1; then
     err "XanMod GPG key 下载失败"
     rm -f "$key_tmp"
     return 1
@@ -389,11 +407,14 @@ native_install_xanmod_kernel() {
   level="$(detect_x64_level)"
   apt-get update -y >>"$WORK_DIR/kernel-install.log" 2>&1 || true
   if ! pkg="$(select_xanmod_pkg "$level")"; then
-    err "未找到可安装的 XanMod 内核包。"
+    warn "未找到可安装的 XanMod 内核包，可能是 deb.xanmod.org 被 Cloudflare challenge 或网络策略拦截。"
+    warn "将清理临时 XanMod APT 源，并允许后续自动降级到系统自带内核 BBR 调优。"
     echo "可用包候选："
     show_xanmod_candidates
     echo "日志：$WORK_DIR/kernel-install.log"
-    return 1
+    rm -f "$repo_file"
+    apt-get update -y >>"$WORK_DIR/kernel-install.log" 2>&1 || true
+    return 3
   fi
   info "CPU 等级：x86-64-v${level}；选择内核包：${pkg}"
 
@@ -862,13 +883,25 @@ run_tcp_optimize() {
     save_pending_state "${SPEED_NEXT_ACTION:-continue}"
     section "安装 XanMod + BBR v3 内核"
     warn "当前不是 XanMod 内核。此阶段保留核心输出，避免隐藏安装失败或重启提示。"
-    if run_tcp_backend_visible; then
+    local kernel_install_code=0
+    set +e
+    run_tcp_backend_visible
+    kernel_install_code=$?
+    set -e
+    if [ "$kernel_install_code" -eq 0 ]; then
       confirm_reboot_now
       return 0
     fi
-    clear_state_silent
-    err "内核组件安装失败，日志：$WORK_DIR/kernel-install.log"
-    return 1
+    if [ "$kernel_install_code" -eq 3 ] && [ "${SPEED_ALLOW_STOCK_FALLBACK:-1}" = "1" ]; then
+      clear_state_silent
+      SPEED_STOCK_FALLBACK_ACTIVE=1
+      warn "XanMod APT 源不可用，已启用降级路径：使用当前系统内核加载 tcp_bbr 并继续 TCP 调优。"
+      warn "此模式不是 XanMod/BBRv3；但可避免一键流程中断，后续节点部署会继续执行。"
+    else
+      clear_state_silent
+      err "内核组件安装失败，日志：$WORK_DIR/kernel-install.log"
+      return 1
+    fi
   fi
 
   local ipv6_choice="Y"
@@ -1239,6 +1272,10 @@ force_all() {
   if ! is_xanmod_kernel; then
     save_pending_state
     run_tcp_optimize
+    if [ "${SPEED_STOCK_FALLBACK_ACTIVE:-0}" = "1" ]; then
+      install_argo_vmess_ws
+      clear_state || true
+    fi
     return 0
   fi
   run_tcp_optimize

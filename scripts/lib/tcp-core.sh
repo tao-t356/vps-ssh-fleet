@@ -114,6 +114,10 @@ format_fixed_width() {
 # GitHub 代理设置
 gh_proxy="https://"
 
+get_effective_jshook() {
+    printf '%s' "${JSHOOK:-${DEFAULT_JSHOOK:-}}"
+}
+
 # 配置文件路径（使用独立文件，不破坏系统配置）
 SYSCTL_CONF="/etc/sysctl.d/99-bbr-ultimate.conf"
 
@@ -2895,7 +2899,7 @@ install_xanmod_kernel() {
     # 尝试2: 从 XanMod 官方源下载
     if [ "$gpg_ok" = false ]; then
         echo -e "${gl_huang}镜像源失败，尝试 XanMod 官方源...${gl_bai}"
-        if wget -qO "$key_tmp" "https://dl.xanmod.org/archive.key" 2>/dev/null && \
+        if wget -qO "$key_tmp" --header="jshook: $(get_effective_jshook)" "https://dl.xanmod.org/archive.key" 2>/dev/null && \
            [ -s "$key_tmp" ]; then
             if gpg --dearmor -o "$gpg_key_file" --yes < "$key_tmp" 2>/dev/null; then
                 gpg_ok=true
@@ -6673,7 +6677,7 @@ update_xanmod_kernel() {
         fi
 
         if [ "$gpg_ok" = false ]; then
-            if wget -qO "$key_tmp" "https://dl.xanmod.org/archive.key" 2>/dev/null && \
+            if wget -qO "$key_tmp" --header="jshook: $(get_effective_jshook)" "https://dl.xanmod.org/archive.key" 2>/dev/null && \
                [ -s "$key_tmp" ]; then
                 if gpg --dearmor -o "$gpg_key_file" --yes < "$key_tmp" 2>/dev/null; then
                     gpg_ok=true
