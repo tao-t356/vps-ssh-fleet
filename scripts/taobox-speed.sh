@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPO_SLUG="tao-t356/TaoBox"
 REPO_RAW_BASE="https://raw.githubusercontent.com/${REPO_SLUG}/main"
-SPEED_SLAYER_VERSION="v1.0.0-taobox.2"
+SPEED_SLAYER_VERSION="v1.0.0-taobox.3"
 PROJECT_URL="https://github.com/${REPO_SLUG}"
 DEFAULT_JSHOOK="123"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || echo .)"
@@ -453,12 +453,15 @@ run_tcp_backend_visible() {
     set +e
     native_install_xanmod_kernel
     local code=$?
-    set -e
     if [ "$code" -eq 0 ]; then
+      set -e
       return 0
     elif [ "$code" -ne 2 ]; then
+      # 保持 errexit 关闭返回给外层，让外层能识别 code=3 并进入
+      # stock-kernel fallback；否则 `set -e` 会在非零 return 处直接退出。
       return "$code"
     fi
+    set -e
   fi
   warn "正在切换到兼容安装路径。"
   fetch_or_run_script "$TCP_SCRIPT_LOCAL" "scripts/tcp-one-click-optimize.sh"
