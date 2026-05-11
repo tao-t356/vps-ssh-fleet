@@ -6,7 +6,7 @@ SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
 APP_NAME="TaoBox"
 REPO_SLUG="tao-t356/TaoBox"
-TOOLBOX_VERSION="0.12.1"
+TOOLBOX_VERSION="0.12.2"
 DEFAULT_JSHOOK="123"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
@@ -562,6 +562,12 @@ run_remote_installer() {
   case "${project_url}" in
     https://raw.githubusercontent.com/tao-t356/TaoBox/main/scripts/taobox-speed.sh)
       download_url="https://api.github.com/repos/tao-t356/TaoBox/contents/scripts/taobox-speed.sh?ref=main&ts=$(date +%s)"
+      ;;
+    https://raw.githubusercontent.com/tao-t356/vless-xhttp-reality-self/main/scripts/install.sh)
+      download_url="https://api.github.com/repos/tao-t356/vless-xhttp-reality-self/contents/scripts/install.sh?ref=main&ts=$(date +%s)"
+      ;;
+    https://raw.githubusercontent.com/tao-t356/Docker-Nginx-Proxy-Manager/main/install.sh)
+      download_url="https://api.github.com/repos/tao-t356/Docker-Nginx-Proxy-Manager/contents/install.sh?ref=main&ts=$(date +%s)"
       ;;
   esac
 
