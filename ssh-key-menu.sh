@@ -6,7 +6,7 @@ SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
 APP_NAME="TaoBox"
 REPO_SLUG="tao-t356/TaoBox"
-TOOLBOX_VERSION="0.12.0"
+TOOLBOX_VERSION="0.12.1"
 DEFAULT_JSHOOK="123"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
@@ -555,18 +555,6 @@ run_remote_installer() {
     err "${project_name} 建议使用 root 运行。"
     return 1
   fi
-
-  say "即将运行: ${project_name}"
-  say "仓库地址: ${project_url}"
-  [ -n "${note}" ] && say "注意：${note}"
-  prompt_read -p "确认继续？[Y/n]: " confirm
-  case "${confirm}" in
-    ""|y|Y) ;;
-    *)
-      warn "已取消。"
-      return 0
-      ;;
-  esac
 
   jshook="$(get_effective_jshook)"
   download_url="${project_url}"
