@@ -6,7 +6,7 @@ SCRIPT_NAME="$(basename "$0")"
 SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
 APP_NAME="TaoBox"
 REPO_SLUG="tao-t356/TaoBox"
-TOOLBOX_VERSION="0.12.4"
+TOOLBOX_VERSION="0.12.5"
 DEFAULT_JSHOOK="123"
 CURRENT_USER="$(id -un)"
 CURRENT_HOME="${HOME:-/root}"
@@ -1115,9 +1115,18 @@ option_update_toolbox() {
 
   tmp_script="$(mktemp)"
   if have_cmd curl; then
-    curl -fsSL -H "jshook: ${jshook}" "https://raw.githubusercontent.com/${REPO_SLUG}/main/bootstrap-vps.sh" -o "${tmp_script}"
+    curl -fsSL \
+      -H "Accept: application/vnd.github.raw" \
+      -H "Cache-Control: no-cache" \
+      -H "jshook: ${jshook}" \
+      "https://api.github.com/repos/${REPO_SLUG}/contents/bootstrap-vps.sh?ref=main&ts=$(date +%s)" \
+      -o "${tmp_script}"
   elif have_cmd wget; then
-    wget -qO "${tmp_script}" --header="jshook: ${jshook}" "https://raw.githubusercontent.com/${REPO_SLUG}/main/bootstrap-vps.sh"
+    wget -qO "${tmp_script}" \
+      --header="Accept: application/vnd.github.raw" \
+      --header="Cache-Control: no-cache" \
+      --header="jshook: ${jshook}" \
+      "https://api.github.com/repos/${REPO_SLUG}/contents/bootstrap-vps.sh?ref=main&ts=$(date +%s)"
   else
     err "需要 curl 或 wget 其中一个命令。"
     rm -f "${tmp_script}"
